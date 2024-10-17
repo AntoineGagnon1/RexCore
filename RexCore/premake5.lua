@@ -5,8 +5,8 @@ project "RexCore"
     warnings "Extra"
     flags { "FatalCompileWarnings" }
 
-    includedirs "./"
+    includedirs "../"
     files {
-        "%{prj.location}/RexCore/**.hpp", 
-        "%{prj.location}/RexCore/**.cpp" 
+        "%{prj.location}/**.hpp", 
+        "%{prj.location}/**.cpp" 
     }

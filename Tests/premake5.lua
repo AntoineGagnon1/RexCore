@@ -8,11 +8,11 @@ project "RexCoreTests"
     targetdir ("%{prj.location}/bin/")
     objdir ("%{prj.location}/obj/")
     
-    includedirs "./"
+    includedirs "../"
     
     links "RexCore"
     
     files {
-        "%{prj.location}/Tests/**.hpp", 
-        "%{prj.location}/Tests/**.cpp"
+        "%{prj.location}/**.hpp", 
+        "%{prj.location}/**.cpp"
     }

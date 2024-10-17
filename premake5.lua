@@ -13,5 +13,5 @@ workspace "RexCore"
         
     filter {}
     
-    include "RexCore"
-    include "Tests"
+    include "rexcore"
+    include "tests"
