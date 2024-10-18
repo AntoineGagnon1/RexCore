@@ -7,7 +7,7 @@ using namespace RexCore;
 template<typename T>
 void TestAllocator()
 {
-	ASSERT(Allocator<T>);
+	ASSERT(IAllocator<T>);
 	T allocator{};
 
 	void* ptr = allocator.Allocate(32, 4);

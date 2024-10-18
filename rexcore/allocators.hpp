@@ -29,19 +29,22 @@ namespace RexCore
 	void DecommitPages(void* address, U64 numPages);
 
 	template<typename T>
-	concept Allocator = std::movable<T> && std::default_initializable<T>&& requires(T a)
+	concept IAllocator = std::movable<T> && std::default_initializable<T>&& requires(T a)
 	{
 		{ a.Allocate(U64{}, U64{}) } -> std::convertible_to<void*>;
 		{ a.Reallocate(nullptr, U64{}, U64{}, U64{}) } -> std::convertible_to<void*>;
 		{ a.Free(nullptr, U64{}) } -> std::convertible_to<void>;
 	};
 
+	template<typename T>
 	class AllocatorBase
 	{
 	public:
+		using AllocatorType = T;
+
 		[[nodiscard]] void* Reallocate(this auto&& self, void* ptr, U64 oldSize, U64 newSize, U64 alignment)
 		{
-			static_assert(Allocator<std::remove_reference_t<decltype(self)>>);
+			static_assert(IAllocator<std::remove_reference_t<decltype(self)>>);
 			REX_CORE_ASSERT(ptr != nullptr);
 			void* newPtr = self.Allocate(newSize, alignment);
 			MemMove(ptr, newPtr, oldSize);
@@ -51,7 +54,7 @@ namespace RexCore
 	};
 
 
-	class MallocAllocator : public AllocatorBase
+	class MallocAllocator : public AllocatorBase<MallocAllocator>
 	{
 	public:
 		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
@@ -70,10 +73,10 @@ namespace RexCore
 			_aligned_free(ptr);
 		}
 	};
-	static_assert(Allocator<MallocAllocator>);
+	static_assert(IAllocator<MallocAllocator>);
 
 	// Allocations will always be page aligned, passing an alignment greater than the page size will assert
-	class PageAllocator : public AllocatorBase
+	class PageAllocator : public AllocatorBase<PageAllocator>
 	{
 	public:
 		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
@@ -92,5 +95,7 @@ namespace RexCore
 			ReleasePages(ptr, numPages);
 		}
 	};
-	static_assert(Allocator<PageAllocator>);
+	static_assert(IAllocator<PageAllocator>);
+
+	using DefaultAllocator = MallocAllocator;
 }

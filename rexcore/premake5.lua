@@ -8,5 +8,10 @@ project "RexCore"
     includedirs "../"
     files {
         "%{prj.location}/**.hpp", 
-        "%{prj.location}/**.cpp" 
+        "%{prj.location}/**.cpp",
+        "%{prj.location}/**.natvis" 
     }
+	
+	filter "files:**.natvis"
+		buildaction "Natvis"
+	filter {}
