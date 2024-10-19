@@ -128,6 +128,7 @@ namespace RexCore
 	private:
 		// TODO perf : we could use part of m_size to store longer small strings, but watch out for endianness
 		// The highest bit of m_size is used to determine if the string is small or not
+		Allocator m_allocator;
 		U64 m_size = SmallStringBitMask;
 		union {
 			struct {
@@ -136,7 +137,6 @@ namespace RexCore
 			} m_big = {0, nullptr};
 			CharT m_small[SmallStringSize];
 		};
-		Allocator m_allocator;
 
 		static_assert(sizeof(decltype(m_big)) <= sizeof(decltype(m_small)));
 
