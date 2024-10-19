@@ -13,11 +13,16 @@ public:
 	MoveOnlyType(const MoveOnlyType&) = delete;
 	MoveOnlyType& operator=(const MoveOnlyType&) = delete;
 
-	MoveOnlyType(int value) : value(value) {}
+	MoveOnlyType(U32 value) : value(value) {}
 
 	operator U32() const { return value; }
 
-	int value;
+	MoveOnlyType Clone() const
+	{
+		return MoveOnlyType(value);
+	}
+
+	U32 value;
 };
 
 template<typename VecT>
@@ -378,6 +383,27 @@ void VecBaseTestContains()
 }
 
 template<typename VecT>
+void VecBaseTestClone()
+{
+	using IndexT = VecT::IndexType;
+	VecT vec = VecT();
+	for (U32 i = 0; i < 16; i++)
+		vec.EmplaceBack(i);
+
+	const VecT& ref = vec;
+	VecT clone = ref.Clone();
+
+	ASSERT(vec.Size() == clone.Size());
+	ASSERT(vec.Data() != clone.Data());
+
+	for (IndexT i = 0; i < 16; i++)
+	{
+		ASSERT(vec[i] == clone[i]);
+	}
+}
+
+
+template<typename VecT>
 void TestVectorBase()
 {
 	VecBaseTestSubscript<VecT>();
@@ -391,6 +417,7 @@ void TestVectorBase()
 	VecBaseTestRemoveAtOrdered<VecT>();
 	VecBaseTestForEach<VecT>();
 	VecBaseTestContains<VecT>();
+	VecBaseTestClone<VecT>();
 
 	using ValueT = VecT::ValueType;
 	if constexpr (std::is_copy_assignable_v<ValueT>)
@@ -613,6 +640,8 @@ void TestFixedVector()
 	VecBaseTestRemoveAt<VecT>();
 	VecBaseTestRemoveAtOrdered<VecT>();
 	VecBaseTestForEach<VecT>();
+	VecBaseTestContains<VecT>();
+	VecBaseTestClone<VecT>();
 
 	// EmplaceBack
 	vec.Clear();

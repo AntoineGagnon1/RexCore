@@ -2,6 +2,7 @@
 
 #include <rexcore/allocators.hpp>
 #include <rexcore/core.hpp>
+#include <rexcore/concepts.hpp>
 
 namespace RexCore
 {
@@ -33,6 +34,16 @@ namespace RexCore
 		constexpr ~VectorTypeBase()
 		{
 			static_cast<ParentClass*>(this)->Free();
+		}
+
+		ParentClass Clone(this auto&& self)
+		{
+			static_assert(IClonable<T>, "The value type must be IClonable in order to clone a vector");
+			ParentClass clone;
+			clone.Reserve(self.Size());
+			for (const T& item : self)
+				clone.EmplaceBack(RexCore::Clone(item));
+			return clone;
 		}
 
 		[[nodiscard]] constexpr decltype(auto) operator[](this auto&& self, IndexT index)
