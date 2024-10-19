@@ -16,6 +16,12 @@ namespace RexCore
 	class VectorTypeBase
 	{
 	public:
+		using Iterator = T*;
+		using ConstIterator = const T*;
+
+		static_assert(std::contiguous_iterator<Iterator>);
+		static_assert(std::contiguous_iterator<ConstIterator>);
+	public:
 		using ValueType = T;
 		using IndexType = IndexT;
 
@@ -50,6 +56,34 @@ namespace RexCore
 		{
 			REX_CORE_ASSERT(self.Size() > 0);
 			return self.Data()[self.Size() - 1];
+		}
+
+		[[nodiscard]] constexpr Iterator Begin(this auto&& self)
+		{
+			if (self.IsEmpty())
+				return nullptr;
+			return self.Data();
+		}
+
+		[[nodiscard]] constexpr ConstIterator CBegin(this auto&& self)
+		{
+			if (self.IsEmpty())
+				return nullptr;
+			return self.Data();
+		}
+
+		[[nodiscard]] constexpr Iterator End(this auto&& self)
+		{
+			if (self.IsEmpty())
+				return nullptr;
+			return self.Data() + self.Size();
+		}
+
+		[[nodiscard]] constexpr ConstIterator CEnd(this auto&& self)
+		{
+			if (self.IsEmpty())
+				return nullptr;
+			return self.Data() + self.Size();
 		}
 
 		constexpr void Clear(this auto&& self)
@@ -157,6 +191,12 @@ namespace RexCore
 
 			self.SetSize(size - 1);
 		}
+
+	public:
+		constexpr Iterator begin(this auto&& self) { return self.Begin(); }
+		constexpr Iterator end(this auto&& self) { return self.End(); }
+		constexpr ConstIterator cbegin(this auto&& self) { return self.CBegin(); }
+		constexpr ConstIterator cend(this auto&& self) { return self.CEnd(); }
 
 	private:
 		static constexpr U64 GrowthFactor = 2;

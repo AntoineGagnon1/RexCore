@@ -328,6 +328,40 @@ void VecBaseTestRemoveAtOrdered()
 }
 
 template<typename VecT>
+void VecBaseTestForEach()
+{
+	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
+	VecT vec = VecT();
+	for (U32 i = 0; i < 16; i++)
+		vec.EmplaceBack(i);
+
+	using CopyValueT = std::conditional_t<std::is_copy_assignable_v<ValueT>, ValueT, const ValueT&>;
+
+	U32 index = 0;
+	for (CopyValueT value : vec)
+	{
+		ASSERT(value == index);
+		index++;
+	}
+
+	index = 0;
+	for (ValueT& value : vec)
+	{
+		ASSERT(value == index);
+		value = std::move(value * 2);
+		index++;
+	}
+
+	index = 0;
+	for (const ValueT& value : vec)
+	{
+		ASSERT(value == index * 2);
+		index++;
+	}
+}
+
+template<typename VecT>
 void TestVectorBase()
 {
 	VecBaseTestSubscript<VecT>();
@@ -339,6 +373,7 @@ void TestVectorBase()
 	VecBaseTestPopBack<VecT>();
 	VecBaseTestRemoveAt<VecT>();
 	VecBaseTestRemoveAtOrdered<VecT>();
+	VecBaseTestForEach<VecT>();
 
 	using ValueT = VecT::ValueType;
 	if constexpr (std::is_copy_assignable_v<ValueT>)
@@ -560,6 +595,7 @@ void TestFixedVector()
 	VecBaseTestPopBack<VecT>();
 	VecBaseTestRemoveAt<VecT>();
 	VecBaseTestRemoveAtOrdered<VecT>();
+	VecBaseTestForEach<VecT>();
 
 	// EmplaceBack
 	vec.Clear();
