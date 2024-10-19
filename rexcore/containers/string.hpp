@@ -5,11 +5,11 @@
 
 namespace RexCore
 {
-	template<typename CharT, IAllocator Allocator>
-	class StringBase : public VectorTypeBase<CharT, U64, StringBase<CharT, Allocator>>
+	template<typename CharT, IAllocator Allocator, U64 InplaceSize = 0>
+	class StringBase : public VectorTypeBase<CharT, U64, StringBase<CharT, Allocator, InplaceSize>>
 	{
 	private:
-		constexpr static U64 SmallStringSize = (sizeof(U64) + sizeof(CharT*)) / sizeof(CharT);
+		constexpr static U64 SmallStringSize = Math::Max((sizeof(U64) + sizeof(CharT*)) / sizeof(CharT), InplaceSize + 1);
 		constexpr static U64 SmallStringBitMask = (1llu << 63llu);
 
 	public:
@@ -68,7 +68,6 @@ namespace RexCore
 					MemCopy(oldData, newData, (newSize + 1) * sizeof(CharT));
 					m_allocator.Free(oldData, (oldCapacity + 1) * sizeof(CharT));
 
-					SetSize(newSize);
 
 					if (newSize < SmallStringSize)
 					{
@@ -79,6 +78,8 @@ namespace RexCore
 						m_big.m_data = newData;
 						m_big.m_capacity = newSize;
 					}
+
+					SetSize(newSize);
 				}
 			}
 			else if (newSize > Size())
@@ -137,12 +138,18 @@ namespace RexCore
 		};
 		Allocator m_allocator;
 
-		static_assert(sizeof(decltype(m_big)) == sizeof(decltype(m_small)));
+		static_assert(sizeof(decltype(m_big)) <= sizeof(decltype(m_small)));
 
-		using Base = VectorTypeBase<CharT, U64, StringBase<CharT, Allocator>>;
+		using Base = VectorTypeBase<CharT, U64, StringBase<CharT, Allocator, InplaceSize>>;
 		friend class Base;
 	};
 
 	using String = StringBase<char, DefaultAllocator>;
 	using WString = StringBase<wchar_t, DefaultAllocator>;
+
+	template<U64 InplaceSize, IAllocator Allocator = DefaultAllocator>
+	using InplaceString = StringBase<char, Allocator, InplaceSize>;
+	template<U64 InplaceSize, IAllocator Allocator = DefaultAllocator>
+	using InplaceWString = StringBase<wchar_t, Allocator, InplaceSize>;
+
 }

@@ -692,3 +692,13 @@ TEST_CASE("Containers/WString")
 {
 	TestString<WString>();
 }
+
+TEST_CASE("Containers/InplaceString")
+{
+	TestString<InplaceString<32>>();
+}
+
+TEST_CASE("Containers/InplaceWString")
+{
+	TestString<InplaceWString<32>>();
+}
