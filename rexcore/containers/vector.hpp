@@ -167,7 +167,7 @@ namespace RexCore
 	class VectorBase : public VectorTypeBase<T, IndexT, VectorBase<T, IndexT, Allocator>>
 	{
 	public:
-		using ValueType = T;
+		using AllocatorType = Allocator;
 
 		REX_CORE_NO_COPY(VectorBase);
 		REX_CORE_DEFAULT_MOVE(VectorBase);
