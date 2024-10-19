@@ -18,6 +18,40 @@
     </Expand>
   </Type>
 
+  <Type Name="RexCore::InplaceVectorBase&lt;*, *, *, *&gt;">
+    <DisplayString>{{Size={m_size}}}</DisplayString>
+
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">m_size</Item>
+      <Item Name="Capacity" ExcludeView="simple">m_capacity</Item>
+      <Item Name="Inplace Size" ExcludeView="simple">"$T3"</Item>
+      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
+      <Item Name="Item Type" ExcludeView="simple">"$T1"</Item>
+      <Item Name="Index Type" ExcludeView="simple">"$T2"</Item>
+
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="RexCore::FixedVectorBase&lt;*, *, *&gt;">
+    <DisplayString>{{Size={m_size}}}</DisplayString>
+
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">m_size</Item>
+      <Item Name="Fixed Size" ExcludeView="simple">"$T3"</Item>
+      <Item Name="Item Type" ExcludeView="simple">"$T1"</Item>
+      <Item Name="Index Type" ExcludeView="simple">"$T2"</Item>
+
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>($T1*)(void*)m_inplaceData</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
   <Type Name="RexCore::AllocatorBase&lt;*&gt;">
     <DisplayString>{"$T1"}</DisplayString>
   </Type>
