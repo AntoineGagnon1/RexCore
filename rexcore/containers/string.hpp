@@ -57,7 +57,6 @@ namespace RexCore
 				if (IsSmallString())
 				{
 					SetSize(newSize);
-					Data()[newSize] = '\0';
 				}
 				else
 				{
@@ -69,8 +68,7 @@ namespace RexCore
 					MemCopy(oldData, newData, (newSize + 1) * sizeof(CharT));
 					m_allocator.Free(oldData, (oldCapacity + 1) * sizeof(CharT));
 
-					m_size = newSize;
-					Data()[newSize] = '\0';
+					SetSize(newSize);
 
 					if (newSize < SmallStringSize)
 					{
@@ -89,7 +87,6 @@ namespace RexCore
 				for (U64 i = Size(); i < newSize; i++)
 					Data()[i] = newCharsValue;
 
-				Data()[newSize] = '\0';
 				SetSize(newSize);
 			}
 		}
@@ -103,7 +100,6 @@ namespace RexCore
 				// Go back to small string
 				SetSmallString(true);
 				SetSize(0);
-				Data()[0] = '\0';
 			}
 		}
 
@@ -111,6 +107,7 @@ namespace RexCore
 		constexpr void SetSize(U64 size)
 		{
 			m_size = size | (m_size & SmallStringBitMask); // Preserve the small string bit
+			Data()[size] = '\0';
 		}
 
 		constexpr bool IsSmallString() const

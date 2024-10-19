@@ -189,9 +189,9 @@ namespace RexCore
 			const IndexT size = self.Size();
 			REX_CORE_ASSERT(size > 0);
 
-			self.SetSize(size - 1);
 			T value = std::move(self.Data()[size - 1]);
 			self.Data()[size - 1].~T();
+			self.SetSize(size - 1);
 			return value;
 		}
 
