@@ -99,7 +99,7 @@ static void TestInplaceVector()
 	VecT vec = VecT();
 	ASSERT(vec.IsEmpty());
 	ASSERT(vec.Size() == 0);
-	ASSERT(vec.Capacity() == 16);
+	ASSERT(vec.Capacity() > 0);
 	ASSERT(vec.Data() != nullptr);
 
 	if constexpr (MoveOnly)
@@ -108,7 +108,7 @@ static void TestInplaceVector()
 		vec.PushBack(1);
 	ASSERT(!vec.IsEmpty());
 	ASSERT(vec.Size() == 1);
-	ASSERT(vec.Capacity() == 16);
+	ASSERT(vec.Capacity() > 0);
 	ASSERT(vec.Data() != nullptr);
 	ASSERT(vec.First() == 1);
 	ASSERT(vec.Last() == 1);
@@ -138,8 +138,8 @@ static void TestInplaceVector()
 	vec.Free();
 	ASSERT(vec.IsEmpty());
 	ASSERT(vec.Size() == 0);
-	ASSERT(vec.Capacity() == 0);
-	ASSERT(vec.Data() == nullptr);
+	ASSERT(vec.Capacity() > 0);
+	ASSERT(vec.Data() != nullptr);
 
 	vec.EmplaceBack(1);
 	vec.EmplaceBack(3);
@@ -179,4 +179,11 @@ TEST_CASE("Containers/Vector")
 	TestInplaceVector<InplaceVector<MoveOnlyType, 16>, true>();
 	TestInplaceVector<BigInplaceVector<U32, 16>, false>();
 	TestInplaceVector<BigInplaceVector<MoveOnlyType, 16>, true>();
+
+	TestInplaceVector<SmallFixedVector<U32, 256>, false>();
+	TestInplaceVector<SmallFixedVector<MoveOnlyType, 256>, true>();
+	TestInplaceVector<FixedVector<U32, 256>, false>();
+	TestInplaceVector<FixedVector<MoveOnlyType, 256>, true>();
+	TestInplaceVector<BigFixedVector<U32, 256>, false>();
+	TestInplaceVector<BigFixedVector<MoveOnlyType, 256>, true>();
 }

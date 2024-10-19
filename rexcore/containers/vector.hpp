@@ -168,15 +168,14 @@ namespace RexCore
 	{
 	public:
 		using ValueType = T;
-		using IndexType = IndexT;
-		using AllocatorType = Allocator;
 
 		REX_CORE_NO_COPY(VectorBase);
 		REX_CORE_DEFAULT_MOVE(VectorBase);
 		
 		constexpr VectorBase() noexcept = default;
 		
-		[[nodiscard]] constexpr T* Data() const { return m_data; }
+		[[nodiscard]] constexpr const T* Data() const { return m_data; }
+		[[nodiscard]] constexpr T* Data() { return m_data; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
 		[[nodiscard]] constexpr IndexT Capacity() const { return m_capacity; }
 
@@ -264,7 +263,8 @@ namespace RexCore
 
 		constexpr InplaceVectorBase() noexcept = default;
 
-		[[nodiscard]] constexpr T* Data() const { return m_data; }
+		[[nodiscard]] constexpr const T* Data() const { return m_data; }
+		[[nodiscard]] constexpr T* Data() { return m_data; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
 		[[nodiscard]] constexpr IndexT Capacity() const { return m_capacity; }
 
@@ -329,12 +329,11 @@ namespace RexCore
 		constexpr void Free()
 		{
 			Base::Clear();
-			if (m_data != nullptr)
+			if (m_data != nullptr && m_data != GetInplaceData())
 			{
-				if (m_data != GetInplaceData())
-					m_allocator.Free(m_data, m_capacity * sizeof(T));
-				m_data = nullptr;
-				m_capacity = 0;
+				m_allocator.Free(m_data, m_capacity * sizeof(T));
+				m_data = GetInplaceData();
+				m_capacity = InplaceSize;
 			}
 		}
 
@@ -361,6 +360,69 @@ namespace RexCore
 		friend class Base;
 	};
 
+	// This vector type will not grow beyond MaxSize
+	template<typename T, std::unsigned_integral IndexT, IndexT MaxSize>
+	class FixedVectorBase : public VectorTypeBase<T, IndexT, FixedVectorBase<T, IndexT, MaxSize>>
+	{
+	public:
+		REX_CORE_NO_COPY(FixedVectorBase);
+		REX_CORE_DEFAULT_MOVE(FixedVectorBase);
+
+		constexpr FixedVectorBase() noexcept = default;
+
+		[[nodiscard]] constexpr const T* Data() const { return static_cast<T*>(static_cast<void*>(m_inplaceData)); }
+		[[nodiscard]] constexpr T* Data() { return static_cast<T*>(static_cast<void*>(m_inplaceData)); }
+		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
+		[[nodiscard]] constexpr IndexT Capacity() const { return MaxSize; }
+
+		constexpr void Reserve(IndexT newCapacity)
+		{
+			REX_CORE_ASSERT(newCapacity <= MaxSize);
+		}
+
+		template<typename ...Args>
+		constexpr void Resize(IndexT newSize, Args&& ...constructorArgs)
+		{
+			REX_CORE_ASSERT(newSize <= MaxSize);
+
+			if (newSize == 0)
+			{
+				Free();
+			}
+			else if (newSize < m_size)
+			{
+				for (IndexT i = newSize; i < m_size; i++)
+					Data()[i].~T();
+
+				m_size = newSize;
+			}
+			else if (newSize > m_size)
+			{
+				for (IndexT i = m_size; i < newSize; i++)
+					new (&Data()[i]) T(std::forward<Args>(constructorArgs)...);
+			}
+		}
+
+		constexpr void Free()
+		{
+			Base::Clear();
+		}
+
+	private:
+		constexpr void SetSize(IndexT size)
+		{
+			REX_CORE_ASSERT(size <= MaxSize);
+			m_size = size;
+		}
+
+	private:
+		alignas(alignof(T)) Byte m_inplaceData[MaxSize * sizeof(T)];
+		IndexT m_size = 0;
+
+		using Base = VectorTypeBase<T, IndexT, FixedVectorBase<T, IndexT, MaxSize>>;
+		friend class Base;
+	};
+
 	template<typename T, IAllocator Allocator = DefaultAllocator>
 	using SmallVector = VectorBase<T, U16, Allocator>;
 
@@ -370,6 +432,7 @@ namespace RexCore
 	template<typename T, IAllocator Allocator = DefaultAllocator>
 	using BigVector = VectorBase<T, U64, Allocator>;
 
+
 	template<typename T, U16 InplaceSize, IAllocator Allocator = DefaultAllocator>
 	using SmallInplaceVector = InplaceVectorBase<T, U16, InplaceSize, Allocator>;
 
@@ -378,4 +441,14 @@ namespace RexCore
 
 	template<typename T, U64 InplaceSize, IAllocator Allocator = DefaultAllocator>
 	using BigInplaceVector = InplaceVectorBase<T, U64, InplaceSize, Allocator>;
+
+
+	template<typename T, U16 MaxSize>
+	using SmallFixedVector = FixedVectorBase<T, U16, MaxSize>;
+
+	template<typename T, U32 MaxSize>
+	using FixedVector = FixedVectorBase<T, U32, MaxSize>;
+
+	template<typename T, U64 MaxSize>
+	using BigFixedVector = FixedVectorBase<T, U64, MaxSize>;
 }
