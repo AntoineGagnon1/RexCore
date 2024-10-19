@@ -8,6 +8,7 @@
 #include <cstring> // std::memcpy and std::memmove
 #include <cstdlib>
 #include <concepts>
+#include <bit>
 
 namespace RexCore
 {
@@ -20,6 +21,21 @@ namespace RexCore
 	inline void MemMove(void* source, void* dest, U64 size)
 	{
 		std::memmove(dest, source, size);
+	}
+
+	inline void MemSet(void* dest, U8 value, U64 size)
+	{
+		std::memset(dest, value, size);
+	}
+
+	inline constexpr bool IsBigEndian()
+	{
+		return std::endian::native == std::endian::big;
+	}
+
+	inline constexpr bool IsLittleEndian()
+	{
+		return std::endian::native == std::endian::little;
 	}
 
 	extern const U64 PageSize;
