@@ -362,6 +362,22 @@ void VecBaseTestForEach()
 }
 
 template<typename VecT>
+void VecBaseTestContains()
+{
+	VecT vec = VecT();
+	for (U32 i = 0; i < 16; i++)
+		vec.EmplaceBack(i);
+
+	for (U32 i = 0; i < 16; i++)
+		ASSERT(vec.Contains(i));
+
+	const VecT& ref = vec;
+	ASSERT(ref.Contains(0));
+
+	ASSERT(!vec.Contains(100));
+}
+
+template<typename VecT>
 void TestVectorBase()
 {
 	VecBaseTestSubscript<VecT>();
@@ -374,6 +390,7 @@ void TestVectorBase()
 	VecBaseTestRemoveAt<VecT>();
 	VecBaseTestRemoveAtOrdered<VecT>();
 	VecBaseTestForEach<VecT>();
+	VecBaseTestContains<VecT>();
 
 	using ValueT = VecT::ValueType;
 	if constexpr (std::is_copy_assignable_v<ValueT>)

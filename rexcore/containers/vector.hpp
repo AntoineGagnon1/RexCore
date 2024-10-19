@@ -58,32 +58,50 @@ namespace RexCore
 			return self.Data()[self.Size() - 1];
 		}
 
-		[[nodiscard]] constexpr Iterator Begin(this auto&& self)
+		[[nodiscard]] constexpr Iterator Begin()
 		{
-			if (self.IsEmpty())
+			auto self = static_cast<ParentClass*>(this);
+			if (self->IsEmpty())
 				return nullptr;
-			return self.Data();
+			return self->Data();
 		}
 
-		[[nodiscard]] constexpr ConstIterator CBegin(this auto&& self)
+		[[nodiscard]] constexpr ConstIterator Begin() const
 		{
-			if (self.IsEmpty())
+			auto self = static_cast<const ParentClass*>(this);
+			if (self->IsEmpty())
 				return nullptr;
-			return self.Data();
+			return self->Data();
 		}
 
-		[[nodiscard]] constexpr Iterator End(this auto&& self)
+		[[nodiscard]] constexpr ConstIterator CBegin() const { return Begin(); }
+
+		[[nodiscard]] constexpr Iterator End()
 		{
-			if (self.IsEmpty())
+			auto self = static_cast<ParentClass*>(this);
+			if (self->IsEmpty())
 				return nullptr;
-			return self.Data() + self.Size();
+			return self->Data() + self->Size();
 		}
 
-		[[nodiscard]] constexpr ConstIterator CEnd(this auto&& self)
+		[[nodiscard]] constexpr ConstIterator End() const
 		{
-			if (self.IsEmpty())
+			auto self = static_cast<const ParentClass*>(this);
+			if (self->IsEmpty())
 				return nullptr;
-			return self.Data() + self.Size();
+			return self->Data() + self->Size();
+		}
+
+		[[nodiscard]] constexpr ConstIterator CEnd() const { return End(); }
+
+		[[nodiscard]] constexpr bool Contains(this auto&& self, const T& value)
+		{
+			for (const auto& item : self)
+			{
+				if (item == value)
+					return true;
+			}
+			return false;
 		}
 
 		constexpr void Clear(this auto&& self)
@@ -193,10 +211,12 @@ namespace RexCore
 		}
 
 	public:
-		constexpr Iterator begin(this auto&& self) { return self.Begin(); }
-		constexpr Iterator end(this auto&& self) { return self.End(); }
-		constexpr ConstIterator cbegin(this auto&& self) { return self.CBegin(); }
-		constexpr ConstIterator cend(this auto&& self) { return self.CEnd(); }
+		constexpr Iterator begin() { return Begin(); }
+		constexpr ConstIterator begin() const { return Begin(); }
+		constexpr Iterator end() { return End(); }
+		constexpr ConstIterator end() const { return End(); }
+		constexpr ConstIterator cbegin() const { return CBegin(); }
+		constexpr ConstIterator cend() const { return CEnd(); }
 
 	private:
 		static constexpr U64 GrowthFactor = 2;
