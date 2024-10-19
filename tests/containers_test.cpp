@@ -429,13 +429,8 @@ void TestVectorBase()
 	VecBaseTestForEach<VecT>();
 	VecBaseTestContains<VecT>();
 	VecBaseTestClone<VecT>();
-
-	using ValueT = VecT::ValueType;
-	if constexpr (std::is_copy_assignable_v<ValueT>)
-	{
-		VecBaseTestPushBack<VecT>();
-		VecBaseTestInsertAt<VecT>();
-	}
+	VecBaseTestPushBack<VecT>();
+	VecBaseTestInsertAt<VecT>();
 }
 
 template<typename VecT>

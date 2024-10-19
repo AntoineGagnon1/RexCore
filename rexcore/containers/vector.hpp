@@ -124,13 +124,14 @@ namespace RexCore
 
 		constexpr T& PushBack(this auto&& self, const T& value)
 		{
+			static_assert(IClonable<T>, "The value type must be IClonable in order to PushBack into a vector");
 			const IndexT size = self.Size();
 			const IndexT capacity = self.Capacity();
 			if (size == capacity)
 				self.Reserve(capacity == 0 ? InitialSize : capacity * GrowthFactor);
 
 			self.SetSize(size + 1);
-			self.Data()[size] = value;
+			self.Data()[size] = RexCore::Clone(value);
 			return self.Data()[size];
 		}
 
@@ -149,6 +150,7 @@ namespace RexCore
 
 		constexpr T& InsertAt(this auto&& self, IndexT index, const T& value)
 		{
+			static_assert(IClonable<T>, "The value type must be IClonable in order to InsertAt into a vector");
 			const IndexT size = self.Size();
 			const IndexT capacity = self.Capacity();
 			REX_CORE_ASSERT(index <= size);
@@ -159,7 +161,7 @@ namespace RexCore
 			for (IndexT i = size; i > index; i--)
 				self.Data()[i] = std::move(self.Data()[i - 1]);
 
-			self.Data()[index] = value;
+			self.Data()[index] = RexCore::Clone(value);
 			self.SetSize(size + 1);
 			return self.Data()[index];
 		}
