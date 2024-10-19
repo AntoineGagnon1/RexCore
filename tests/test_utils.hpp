@@ -38,12 +38,15 @@ namespace RexCore::Tests
 			}
 
 			printf("\n\n");
+			printf("Ran %llu asserts in %llu tests.\n", s_AssertCount, s_testCases.size());
 			if (testFailed == 0)
 				printf("\x1B[32mAll %llu tests passed!\033[0m\n", s_testCases.size());
 			else
 				printf("\x1B[31m%llu/%llu test failed\033[0m\n", testFailed, s_testCases.size());
 			return testFailed == 0;
 		}
+
+		inline static size_t s_AssertCount = 0;
 
 	private:
 		struct TestCase
@@ -66,5 +69,6 @@ namespace RexCore::Tests
 
 #define TEST_CASE(name) TEST_CASE_INNER(name, CONCAT(testCase_, __COUNTER__))
 
-#define ASSERT(cond) if (!(cond)) {DEBUG_BREAK(); throw std::runtime_error(std::format("{}:{}\t[{}]", __FILE__, __LINE__, #cond));}
+#define ASSERT(cond) if (!(cond)) {DEBUG_BREAK(); throw std::runtime_error(std::format("{}:{}\t[{}]", __FILE__, __LINE__, #cond));} \
+	::RexCore::Tests::RegisterTestCase::s_AssertCount++
 }
