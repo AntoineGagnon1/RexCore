@@ -29,7 +29,7 @@ namespace RexCore
 			static_cast<ParentClass*>(this)->Free();
 		}
 
-		[[nodiscard]] constexpr const T& operator[](this auto&& self, IndexT index)
+		[[nodiscard]] constexpr decltype(auto) operator[](this auto&& self, IndexT index)
 		{
 			REX_CORE_ASSERT(index < self.Size());
 			return self.Data()[index];
@@ -40,13 +40,13 @@ namespace RexCore
 			return self.Size() == 0;
 		}
 
-		[[nodiscard]] constexpr const T& First(this auto&& self)
+		[[nodiscard]] constexpr decltype(auto) First(this auto&& self)
 		{
 			REX_CORE_ASSERT(self.Size() > 0);
 			return self.Data()[0];
 		}
 
-		[[nodiscard]] constexpr const T& Last(this auto&& self)
+		[[nodiscard]] constexpr decltype(auto) Last(this auto&& self)
 		{
 			REX_CORE_ASSERT(self.Size() > 0);
 			return self.Data()[self.Size() - 1];
@@ -222,6 +222,8 @@ namespace RexCore
 				Reserve(newSize);
 				for (IndexT i = m_size; i < newSize; i++)
 					new (&m_data[i]) T(std::forward<Args>(constructorArgs)...);
+
+				m_size = newSize;
 			}
 		}
 
@@ -257,6 +259,7 @@ namespace RexCore
 	{
 	public:
 		using AllocatorType = Allocator;
+		constexpr static IndexT InplaceCapacity = InplaceSize;
 
 		REX_CORE_NO_COPY(InplaceVectorBase);
 		REX_CORE_DEFAULT_MOVE(InplaceVectorBase);
@@ -315,7 +318,7 @@ namespace RexCore
 					m_allocator.Free(m_data, m_capacity * sizeof(T));
 					m_data = newData;
 					m_size = newSize;
-					m_capacity = newSize;
+					m_capacity = newSize <= InplaceSize ? InplaceSize : newSize;
 				}
 			}
 			else if (newSize > m_size)
@@ -323,6 +326,8 @@ namespace RexCore
 				Reserve(newSize);
 				for (IndexT i = m_size; i < newSize; i++)
 					new (&m_data[i]) T(std::forward<Args>(constructorArgs)...);
+
+				m_size = newSize;
 			}
 		}
 
@@ -365,12 +370,14 @@ namespace RexCore
 	class FixedVectorBase : public VectorTypeBase<T, IndexT, FixedVectorBase<T, IndexT, MaxSize>>
 	{
 	public:
+		constexpr static IndexT FixedSize = MaxSize;
+
 		REX_CORE_NO_COPY(FixedVectorBase);
 		REX_CORE_DEFAULT_MOVE(FixedVectorBase);
 
 		constexpr FixedVectorBase() noexcept = default;
 
-		[[nodiscard]] constexpr const T* Data() const { return static_cast<T*>(static_cast<void*>(m_inplaceData)); }
+		[[nodiscard]] constexpr const T* Data() const { return static_cast<const T*>(static_cast<const void*>(m_inplaceData)); }
 		[[nodiscard]] constexpr T* Data() { return static_cast<T*>(static_cast<void*>(m_inplaceData)); }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
 		[[nodiscard]] constexpr IndexT Capacity() const { return MaxSize; }
@@ -400,6 +407,8 @@ namespace RexCore
 			{
 				for (IndexT i = m_size; i < newSize; i++)
 					new (&Data()[i]) T(std::forward<Args>(constructorArgs)...);
+
+				m_size = newSize;
 			}
 		}
 
