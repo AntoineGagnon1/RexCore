@@ -1,6 +1,7 @@
 #include <tests/test_utils.hpp>
 
 #include <rexcore/containers/vector.hpp>
+#include <rexcore/containers/string.hpp>
 #include <rexcore/math.hpp>
 
 using namespace RexCore;
@@ -14,14 +15,19 @@ public:
 	MoveOnlyType(const MoveOnlyType&) = delete;
 	MoveOnlyType& operator=(const MoveOnlyType&) = delete;
 
-	MoveOnlyType(U32 value) : value(value) {}
+	explicit MoveOnlyType(U16 value) : value((U32)value) {}
+	explicit MoveOnlyType(U32 value) : value((U32)value) {}
+	explicit MoveOnlyType(U64 value) : value((U32)value) {}
+	explicit MoveOnlyType(int value) : value((U32)value) {}
 
-	operator U32() const { return value; }
+	explicit operator U32() const { return value; }
 
 	MoveOnlyType Clone() const
 	{
 		return MoveOnlyType(value);
 	}
+
+	auto operator<=>(const MoveOnlyType&) const = default;
 
 	U32 value;
 };
@@ -30,6 +36,7 @@ template<typename VecT>
 void VecTestReserve()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 
 	IndexT oldSize = vec.Size();
@@ -47,18 +54,19 @@ void VecTestReserve()
 	ASSERT(vec.Data() == ptr);
 
 	for (IndexT i = 0; i < newCapacity; i++)
-		vec.EmplaceBack((U32)i);
+		vec.EmplaceBack(ValueT(i));
 
 	vec.Reserve(vec.Capacity() * 2); // Make sure that reserving does not change the content
 	ASSERT(vec.Data() != ptr);
 	for (IndexT i = 0; i < newCapacity; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 }
 
 template<typename VecT>
 void VecTestResize()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 
 	vec.Resize(8, 0);
@@ -67,7 +75,7 @@ void VecTestResize()
 	ASSERT(vec.Capacity() == 8);
 	ASSERT(vec.Data() != nullptr);
 	for (IndexT i = 0; i < 8; i++)
-		ASSERT(vec[i] == 0);
+		ASSERT(vec[i] == ValueT(0));
 
 	vec.Resize(0, 0); // Should free the memory
 	ASSERT(vec.IsEmpty());
@@ -84,7 +92,7 @@ void VecTestResize()
 	ASSERT(vec.Data() == ptr);
 
 	for (IndexT i = 0; i < 16; i++)
-		vec[i] = (U32)i;
+		vec[i] = ValueT(i);
 
 	vec.Resize(8, 0); // Smaller resize should clip the content but keep the start the same
 	ASSERT(!vec.IsEmpty());
@@ -92,7 +100,7 @@ void VecTestResize()
 	ASSERT(vec.Capacity() == 8);
 
 	for (IndexT i = 0; i < 8; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 }
 
 template<typename VecT>
@@ -118,18 +126,19 @@ template<typename VecT>
 void VecBaseTestSubscript()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	vec.Resize(8, 0);
 
 	for (IndexT i = 0; i < 8; i++)
-		vec[i] = (U32)i;
+		vec[i] = (ValueT)i;
 
 	for (IndexT i = 0; i < 8; i++)
-		ASSERT(vec[i] == (U32)i);
+		ASSERT(vec[i] == (ValueT)i);
 
 	const VecT& ref = vec; // Make sure that the operator exists when const
 	for (IndexT i = 0; i < 8; i++)
-		ASSERT(ref[i] == i);
+		ASSERT(ref[i] == ValueT(i));
 }
 
 template<typename VecT>
@@ -152,20 +161,21 @@ template<typename VecT>
 void VecBaseTestFirstLast()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	vec.Resize(8, 0);
 	for (IndexT i = 0; i < 8; i++)
-		vec[i] = (U32)i;
+		vec[i] = ValueT(i);
 
-	ASSERT(vec.First() == 0);
-	ASSERT(vec.Last() == 7);
+	ASSERT(vec.First() == ValueT(0));
+	ASSERT(vec.Last() == ValueT(7));
 
-	vec.First() = 1;
-	vec.Last() = 6;
+	vec.First() = ValueT(1);
+	vec.Last() = ValueT(6);
 
 	const VecT& ref = vec;
-	ASSERT(ref.First() == 1);
-	ASSERT(ref.Last() == 6);
+	ASSERT(ref.First() == ValueT(1));
+	ASSERT(ref.Last() == ValueT(6));
 }
 
 template<typename VecT>
@@ -192,12 +202,13 @@ template<typename VecT>
 void VecBaseTestPushBack()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	ASSERT(vec.Size() == 0);
 
-	vec.PushBack(1);
+	vec.PushBack(ValueT(1));
 	ASSERT(vec.Size() == 1);
-	ASSERT(vec[0] == 1);
+	ASSERT(vec[0] == ValueT(1));
 
 	vec.Clear();
 
@@ -209,7 +220,7 @@ void VecBaseTestPushBack()
 	auto newSize = Math::Min<IndexT>(maxSize, capacity * 2);
 	auto ptr = vec.Data();
 	for (IndexT i = 0; i < newSize; i++)
-		vec.PushBack((U32)i);
+		vec.PushBack(ValueT(i));
 
 	ASSERT(vec.Capacity() >= newSize);
 	if constexpr (requires { VecT::FixedSize; } == false)
@@ -217,19 +228,20 @@ void VecBaseTestPushBack()
 	ASSERT(vec.Size() == newSize);
 
 	for (IndexT i = 0; i < newSize; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 }
 
 template<typename VecT>
 void VecBaseTestEmplaceBack()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	ASSERT(vec.Size() == 0);
 
-	vec.EmplaceBack(1);
+	vec.EmplaceBack(ValueT(1));
 	ASSERT(vec.Size() == 1);
-	ASSERT(vec[0] == 1);
+	ASSERT(vec[0] == ValueT(1));
 
 	vec.Clear();
 	
@@ -241,7 +253,7 @@ void VecBaseTestEmplaceBack()
 	auto newSize = Math::Min<IndexT>(maxSize, capacity * 2);
 	auto ptr = vec.Data();
 	for (IndexT i = 0; i < newSize; i++)
-		vec.EmplaceBack((U32)i);
+		vec.EmplaceBack(ValueT(i));
 
 	ASSERT(vec.Capacity() >= newSize);
 	if constexpr (requires { VecT::FixedSize; } == false)
@@ -249,58 +261,61 @@ void VecBaseTestEmplaceBack()
 	ASSERT(vec.Size() == newSize);
 
 	for (IndexT i = 0; i < newSize; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 }
 
 template<typename VecT>
 void VecBaseTestInsertAt()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.PushBack(i);
+		vec.PushBack(ValueT(i));
 
-	vec.InsertAt(5, 100);
+	vec.InsertAt(5, ValueT(100));
 	ASSERT(vec.Size() == 17);
-	ASSERT(vec[5] == 100);
+	ASSERT(vec[5] == ValueT(100));
 
 	for (IndexT i = 0; i < 5; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 
 	for (IndexT i = 6; i < 17; i++)
-		ASSERT(vec[i] == (U32)(i - 1));
+		ASSERT(vec[i] == ValueT(i - 1));
 }
 
 template<typename VecT>
 void VecBaseTestEmplaceAt()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.EmplaceBack(i);
+		vec.EmplaceBack(ValueT(i));
 
-	vec.EmplaceAt(5, 100);
+	vec.EmplaceAt(5, ValueT(100));
 	ASSERT(vec.Size() == 17);
-	ASSERT(vec[5] == 100);
+	ASSERT(vec[5] == ValueT(100));
 
 	for (IndexT i = 0; i < 5; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 
 	for (IndexT i = 6; i < 17; i++)
-		ASSERT(vec[i] == (U32)(i - 1));
+		ASSERT(vec[i] == ValueT(i - 1));
 }
 
 template<typename VecT>
 void VecBaseTestPopBack()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.EmplaceBack(i);
+		vec.EmplaceBack(ValueT(i));
 
 	for (S32 i = 15; i >= 0; i--)
 	{
-		ASSERT(vec.PopBack() == (U32)i);
+		ASSERT(vec.PopBack() == ValueT(i));
 		ASSERT(vec.Size() == (IndexT)i);
 	}
 }
@@ -309,38 +324,40 @@ template<typename VecT>
 void VecBaseTestRemoveAt()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.EmplaceBack(i);
+		vec.EmplaceBack(ValueT(i));
 
 	vec.RemoveAt(5);
 	ASSERT(vec.Size() == 15);
-	ASSERT(vec[5] == 15);
+	ASSERT(vec[5] == ValueT(15));
 
 	for (IndexT i = 0; i < 5; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 
 	for (IndexT i = 6; i < 15; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 }
 
 template<typename VecT>
 void VecBaseTestRemoveAtOrdered()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.EmplaceBack(i);
+		vec.EmplaceBack(ValueT(i));
 
 	vec.RemoveAtOrdered(5);
 	ASSERT(vec.Size() == 15);
-	ASSERT(vec[5] == 6);
+	ASSERT(vec[5] == ValueT(6));
 
 	for (IndexT i = 0; i < 5; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 
 	for (IndexT i = 6; i < 15; i++)
-		ASSERT(vec[i] == (U32)(i + 1));
+		ASSERT(vec[i] == ValueT(i + 1));
 }
 
 template<typename VecT>
@@ -350,29 +367,29 @@ void VecBaseTestForEach()
 	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.EmplaceBack(i);
+		vec.EmplaceBack(ValueT(i));
 
 	using CopyValueT = std::conditional_t<std::is_copy_assignable_v<ValueT>, ValueT, const ValueT&>;
 
 	U32 index = 0;
 	for (CopyValueT value : vec)
 	{
-		ASSERT(value == index);
+		ASSERT(value == ValueT(index));
 		index++;
 	}
 
 	index = 0;
 	for (ValueT& value : vec)
 	{
-		ASSERT(value == index);
-		value = std::move(value * 2);
+		ASSERT(value == ValueT(index));
+		value = ValueT(U32(value) * 2);
 		index++;
 	}
 
 	index = 0;
 	for (const ValueT& value : vec)
 	{
-		ASSERT(value == index * 2);
+		ASSERT(value == ValueT(index * 2));
 		index++;
 	}
 }
@@ -380,26 +397,30 @@ void VecBaseTestForEach()
 template<typename VecT>
 void VecBaseTestContains()
 {
+	using ValueT = VecT::ValueType;
+
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.EmplaceBack(i);
+		vec.EmplaceBack(ValueT(i));
 
 	for (U32 i = 0; i < 16; i++)
-		ASSERT(vec.Contains(i));
+		ASSERT(vec.Contains(ValueT(i)));
 
 	const VecT& ref = vec;
-	ASSERT(ref.Contains(0));
+	ASSERT(ref.Contains(ValueT(0)));
 
-	ASSERT(!vec.Contains(100));
+	ASSERT(!vec.Contains(ValueT(100)));
 }
 
 template<typename VecT>
 void VecBaseTestClone()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
+
 	VecT vec = VecT();
 	for (U32 i = 0; i < 16; i++)
-		vec.EmplaceBack(i);
+		vec.EmplaceBack(ValueT(i));
 
 	const VecT& ref = vec;
 	VecT clone = ref.Clone();
@@ -465,6 +486,7 @@ template<typename VecT>
 void InplaceVecTestResize()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	auto inplaceBuffer = vec.Data();
 
@@ -481,7 +503,7 @@ void InplaceVecTestResize()
 	ASSERT(vec.Data() != nullptr);
 	ASSERT(vec.Data() != inplaceBuffer);
 	for (IndexT i = 0; i < 64; i++)
-		ASSERT(vec[i] == 0);
+		ASSERT(vec[i] == ValueT(0));
 
 	vec.Resize(0, 0); // Should free the memory and go back to the inplace buffer
 	ASSERT(vec.IsEmpty());
@@ -499,7 +521,7 @@ void InplaceVecTestResize()
 	ASSERT(vec.Data() != inplaceBuffer);
 
 	for (IndexT i = 0; i < VecT::InplaceCapacity; i++)
-		vec[i] = (U32)i;
+		vec[i] = ValueT(i);
 
 	vec.Resize(VecT::InplaceCapacity / 2, 0); // Should go back to the inplace buffer
 	ASSERT(!vec.IsEmpty());
@@ -508,7 +530,7 @@ void InplaceVecTestResize()
 	ASSERT(vec.Data() == inplaceBuffer);
 
 	for (IndexT i = 0; i < VecT::InplaceCapacity / 2; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 }
 
 template<typename VecT>
@@ -563,6 +585,7 @@ template<typename VecT>
 void FixedVecTestResize()
 {
 	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
 	VecT vec = VecT();
 	auto inplaceBuffer = vec.Data();
 
@@ -585,7 +608,7 @@ void FixedVecTestResize()
 	ASSERT(vec.Data() == inplaceBuffer);
 
 	for (IndexT i = 0; i < VecT::FixedSize; i++)
-		vec[i] = (U32)i;
+		vec[i] = ValueT(i);
 
 	vec.Resize(VecT::FixedSize / 2, 0);
 	ASSERT(!vec.IsEmpty());
@@ -594,7 +617,7 @@ void FixedVecTestResize()
 	ASSERT(vec.Data() == inplaceBuffer);
 
 	for (IndexT i = 0; i < VecT::FixedSize / 2; i++)
-		ASSERT(vec[i] == i);
+		ASSERT(vec[i] == ValueT(i));
 }
 
 template<typename VecT>
@@ -642,4 +665,30 @@ TEST_CASE("Containers/FixedVector")
 
 	TestFixedVector<BigFixedVector<U32, 32>>();
 	TestFixedVector<BigFixedVector<MoveOnlyType, 32>>();
+}
+
+template<typename StringT>
+void TestString()
+{
+	StringT str = StringT();
+	ASSERT(str.IsEmpty());
+	ASSERT(str.Size() == 0);
+	ASSERT(str.Capacity() > 0);
+	ASSERT(str.Data() != nullptr);
+
+	VecTestReserve<StringT>();
+	InplaceVecTestResize<StringT>();
+	InplaceVecTestFree<StringT>();
+
+	TestVectorBase<StringT>();
+}
+
+TEST_CASE("Containers/String")
+{
+	TestString<String>();
+}
+
+TEST_CASE("Containers/WString")
+{
+	TestString<WString>();
 }
