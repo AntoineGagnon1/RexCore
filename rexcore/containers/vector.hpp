@@ -1,80 +1,184 @@
 #pragma once
 
 #include <rexcore/allocators.hpp>
+#include <rexcore/core.hpp>
 
 namespace RexCore
 {
+	// ParentClass must provide :
+	// void Free()
+	// T* Data()
+	// IndexT Size()
+	// IndexT Capacity()
+	// void Reserve(IndexT newCapacity)
+	// void SetSize(IndexT size)
+	template<typename T, std::unsigned_integral IndexT, typename ParentClass>
+	class VectorTypeBase
+	{
+	public:
+		using ValueType = T;
+		using IndexType = IndexT;
+
+		REX_CORE_NO_COPY(VectorTypeBase);
+		REX_CORE_DEFAULT_MOVE(VectorTypeBase);
+
+		constexpr VectorTypeBase() noexcept = default;
+
+		constexpr ~VectorTypeBase()
+		{
+			static_cast<ParentClass*>(this)->Free();
+		}
+
+		[[nodiscard]] constexpr const T& operator[](this auto&& self, IndexT index)
+		{
+			REX_CORE_ASSERT(index < self.Size());
+			return self.Data()[index];
+		}
+
+		[[nodiscard]] constexpr bool IsEmpty(this auto&& self)
+		{
+			return self.Size() == 0;
+		}
+
+		[[nodiscard]] constexpr const T& First(this auto&& self)
+		{
+			REX_CORE_ASSERT(self.Size() > 0);
+			return self.Data()[0];
+		}
+
+		[[nodiscard]] constexpr const T& Last(this auto&& self)
+		{
+			REX_CORE_ASSERT(self.Size() > 0);
+			return self.Data()[self.Size() - 1];
+		}
+
+		constexpr void Clear(this auto&& self)
+		{
+			for (IndexT i = 0; i < self.Size(); i++)
+				self.Data()[i].~T();
+			self.SetSize(0);
+		}
+
+		constexpr T& PushBack(this auto&& self, const T& value)
+		{
+			const IndexT size = self.Size();
+			const IndexT capacity = self.Capacity();
+			if (size == capacity)
+				self.Reserve(capacity == 0 ? InitialSize : capacity * GrowthFactor);
+
+			self.SetSize(size + 1);
+			self.Data()[size] = value;
+			return self.Data()[size];
+		}
+
+		template<typename ...Args>
+		constexpr T& EmplaceBack(this auto&& self, Args&& ...constructorArgs)
+		{
+			const IndexT size = self.Size();
+			const IndexT capacity = self.Capacity();
+			if (size == capacity)
+				self.Reserve(capacity == 0 ? InitialSize : capacity * GrowthFactor);
+
+			self.SetSize(size + 1);
+			new (&self.Data()[size]) T(std::forward<Args>(constructorArgs)...);
+			return self.Data()[size];
+		}
+
+		constexpr T& InsertAt(this auto&& self, IndexT index, const T& value)
+		{
+			const IndexT size = self.Size();
+			const IndexT capacity = self.Capacity();
+			REX_CORE_ASSERT(index <= size);
+
+			if (size == capacity) // TODO perf : could be faster if we resize and insert at the same time
+				self.Reserve(capacity == 0 ? InitialSize : capacity * GrowthFactor);
+
+			for (IndexT i = size; i > index; i--)
+				self.Data()[i] = std::move(self.Data()[i - 1]);
+
+			self.Data()[index] = value;
+			self.SetSize(size + 1);
+			return self.Data()[index];
+		}
+
+		template<typename ...Args>
+		constexpr T& EmplaceAt(this auto&& self, IndexT index, Args&& ...constructorArgs)
+		{
+			const IndexT size = self.Size();
+			const IndexT capacity = self.Capacity();
+			REX_CORE_ASSERT(index <= size);
+
+			if (size == capacity) // TODO perf : could be faster if we resize and insert at the same time
+				self.Reserve(capacity == 0 ? InitialSize : capacity * GrowthFactor);
+
+			for (IndexT i = size; i > index; i--)
+				self.Data()[i] = std::move(self.Data()[i - 1]);
+
+			new (&self.Data()[index]) T(std::forward<Args>(constructorArgs)...);
+			self.SetSize(size + 1);
+			return self.Data()[index];
+		}
+
+		constexpr T PopBack(this auto&& self)
+		{
+			const IndexT size = self.Size();
+			REX_CORE_ASSERT(size > 0);
+
+			self.SetSize(size - 1);
+			T value = std::move(self.Data()[size - 1]);
+			self.Data()[size - 1].~T();
+			return value;
+		}
+
+		// Swap with the last element and remove
+		// WARNING : this will change the order of the elements
+		constexpr void RemoveAt(this auto&& self, IndexT index)
+		{
+			const IndexT size = self.Size();
+			REX_CORE_ASSERT(index < size);
+
+			self.Data()[index].~T();
+
+			if (index != size - 1)
+				self.Data()[index] = std::move(self.Data()[size - 1]);
+
+			self.SetSize(size - 1);
+		}
+
+		constexpr void RemoveAtOrdered(this auto&& self, IndexT index)
+		{
+			const IndexT size = self.Size();
+			REX_CORE_ASSERT(index < size);
+
+			self.Data()[index].~T();
+
+			for (IndexT i = index; i < size - 1; i++)
+				self.Data()[i] = std::move(self.Data()[i + 1]);
+
+			self.SetSize(size - 1);
+		}
+
+	private:
+		static constexpr U64 GrowthFactor = 2;
+		static constexpr U64 InitialSize = 8;
+	};
+
 	template<typename T, std::unsigned_integral IndexT, IAllocator Allocator>
-	class VectorBase
+	class VectorBase : public VectorTypeBase<T, IndexT, VectorBase<T, IndexT, Allocator>>
 	{
 	public:
 		using ValueType = T;
 		using IndexType = IndexT;
 		using AllocatorType = Allocator;
 
-		constexpr VectorBase(const VectorBase&) = delete;
-		constexpr VectorBase& operator=(const VectorBase&) = delete;
-
-		constexpr VectorBase(VectorBase&&) noexcept = default;
-		constexpr VectorBase& operator=(VectorBase&& other) noexcept = default;
+		REX_CORE_NO_COPY(VectorBase);
+		REX_CORE_DEFAULT_MOVE(VectorBase);
 		
 		constexpr VectorBase() noexcept = default;
-		constexpr ~VectorBase()
-		{
-			Free();
-		}
-
-		[[nodiscard]] constexpr T* Data() const
-		{
-			return m_data;
-		}
-
-		[[nodiscard]] constexpr IndexT Size() const
-		{
-			return m_size;
-		}
-
-		[[nodiscard]] constexpr IndexT Capacity() const
-		{
-			return m_capacity;
-		}
-
-		[[nodiscard]] constexpr bool IsEmpty() const
-		{
-			return m_size == 0;
-		}
-
-		[[nodiscard]] constexpr const T& First() const {
-			REX_CORE_ASSERT(m_size > 0);
-			return m_data[0];
-		}
-
-		[[nodiscard]] constexpr T& First() {
-			REX_CORE_ASSERT(m_size > 0);
-			return m_data[0];
-		}
-
-		[[nodiscard]] constexpr const T& Last() const {
-			REX_CORE_ASSERT(m_size > 0);
-			return m_data[m_size - 1];
-		}
-
-		[[nodiscard]] constexpr T& Last() {
-			REX_CORE_ASSERT(m_size > 0);
-			return m_data[m_size - 1];
-		}
-
-		[[nodiscard]] constexpr const T& operator[](IndexT index) const
-		{
-			REX_CORE_ASSERT(index < m_size);
-			return m_data[index];
-		}
-
-		[[nodiscard]] constexpr T& operator[](IndexT index)
-		{
-			REX_CORE_ASSERT(index < m_size);
-			return m_data[index];
-		}
+		
+		[[nodiscard]] constexpr T* Data() const { return m_data; }
+		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
+		[[nodiscard]] constexpr IndexT Capacity() const { return m_capacity; }
 
 		constexpr void Reserve(IndexT newCapacity)
 		{
@@ -122,16 +226,9 @@ namespace RexCore
 			}
 		}
 
-		constexpr void Clear()
-		{
-			for (IndexT i = 0; i < m_size; i++)
-				m_data[i].~T();
-			m_size = 0;
-		}
-
 		constexpr void Free()
 		{
-			Clear();
+			Base::Clear();
 			if (m_data != nullptr)
 			{
 				m_allocator.Free(m_data, m_capacity * sizeof(T));
@@ -140,90 +237,10 @@ namespace RexCore
 			}
 		}
 
-		constexpr T& PushBack(const T& value)
+	private:
+		constexpr void SetSize(IndexT size)
 		{
-			if (m_size == m_capacity)
-				Reserve(m_capacity == 0 ? InitialSize : m_capacity * GrowthFactor);
-
-			m_data[m_size] = value;
-			return m_data[m_size++];
-		}
-
-		template<typename ...Args>
-		constexpr T& EmplaceBack(Args&& ...constructorArgs)
-		{
-			if (m_size == m_capacity)
-				Reserve(m_capacity == 0 ? InitialSize : m_capacity * GrowthFactor);
-
-			new (&m_data[m_size]) T(std::forward<Args>(constructorArgs)...);
-			return m_data[m_size++];
-		}
-
-		constexpr T& InsertAt(IndexT index, const T& value)
-		{
-			REX_CORE_ASSERT(index <= m_size);
-
-			if (m_size == m_capacity) // TODO perf : could be faster if we resize and insert at the same time
-				Reserve(m_capacity == 0 ? InitialSize : m_capacity * GrowthFactor);
-
-			for (IndexT i = m_size; i > index; i--)
-				m_data[i] = std::move(m_data[i - 1]);
-
-			m_data[index] = value;
-			m_size++;
-			return m_data[index];
-		}
-
-		template<typename ...Args>
-		constexpr T& EmplaceAt(IndexT index, Args&& ...constructorArgs)
-		{
-			REX_CORE_ASSERT(index <= m_size);
-
-			if (m_size == m_capacity) // TODO perf : could be faster if we resize and insert at the same time
-				Reserve(m_capacity == 0 ? InitialSize : m_capacity * GrowthFactor);
-
-			for (IndexT i = m_size; i > index; i--)
-				m_data[i] = std::move(m_data[i - 1]);
-
-			new (&m_data[index]) T(std::forward<Args>(constructorArgs)...);
-			m_size++;
-			return m_data[index];
-		}
-
-		constexpr T PopBack()
-		{
-			REX_CORE_ASSERT(m_size > 0);
-
-			m_size--;
-			T value = std::move(m_data[m_size]);
-			m_data[m_size].~T();
-			return value;
-		}
-
-		// Swap with the last element and remove
-		// WARNING : this will change the order of the elements
-		constexpr void RemoveAt(IndexT index)
-		{
-			REX_CORE_ASSERT(index < m_size);
-
-			m_data[index].~T();
-			
-			if (index != m_size - 1)
-				m_data[index] = std::move(m_data[m_size - 1]);
-
-			m_size--;
-		}
-
-		constexpr void RemoveAtOrdered(IndexT index)
-		{
-			REX_CORE_ASSERT(index < m_size);
-
-			m_data[index].~T();
-
-			for (IndexT i = index; i < m_size - 1; i++)
-				m_data[i] = std::move(m_data[i + 1]);
-
-			m_size--;
+			m_size = size;
 		}
 
 	private:
@@ -232,16 +249,133 @@ namespace RexCore
 		IndexT m_size = 0;
 		IndexT m_capacity = 0;
 
-		static constexpr U64 GrowthFactor = 2;
-		static constexpr U64 InitialSize = 8;
+		using Base = VectorTypeBase<T, IndexT, VectorBase<T, IndexT, Allocator>>;
+		friend class Base;
 	};
 
-	template<typename T, IAllocator Allocator = DefaultAllocator>
-	using Vector = VectorBase<T, U32, Allocator>;
+	template<typename T, std::unsigned_integral IndexT, IndexT InplaceSize, IAllocator Allocator>
+	class InplaceVectorBase : public VectorTypeBase<T, IndexT, InplaceVectorBase<T, IndexT, InplaceSize, Allocator>>
+	{
+	public:
+		using AllocatorType = Allocator;
+
+		REX_CORE_NO_COPY(InplaceVectorBase);
+		REX_CORE_DEFAULT_MOVE(InplaceVectorBase);
+
+		constexpr InplaceVectorBase() noexcept = default;
+
+		[[nodiscard]] constexpr T* Data() const { return m_data; }
+		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
+		[[nodiscard]] constexpr IndexT Capacity() const { return m_capacity; }
+
+		constexpr void Reserve(IndexT newCapacity)
+		{
+			if (newCapacity <= m_capacity)
+				return;
+
+			// TODO perf : can we use realloc ?
+			T* newData = static_cast<T*>(m_allocator.Allocate(newCapacity * sizeof(T), alignof(T)));
+			if (m_data != nullptr)
+			{
+				for (IndexT i = 0; i < m_size; i++)
+					newData[i] = std::move(m_data[i]);
+
+				if (m_data != GetInplaceData())
+					m_allocator.Free(m_data, m_capacity * sizeof(T));
+			}
+			m_data = newData;
+			m_capacity = newCapacity;
+		}
+
+		template<typename ...Args>
+		constexpr void Resize(IndexT newSize, Args&& ...constructorArgs)
+		{
+			if (newSize == 0)
+			{
+				Free();
+			}
+			else if (newSize < m_size)
+			{
+				if (m_data == GetInplaceData())
+				{
+					for (IndexT i = newSize; i < m_size; i++)
+						m_data[i].~T();
+
+					m_size = newSize;
+				}
+				else
+				{
+					T* newData = newSize <= InplaceSize ? GetInplaceData() : static_cast<T*>(m_allocator.Allocate(newSize * sizeof(T), alignof(T)));
+					for (IndexT i = 0; i < newSize; i++)
+						newData[i] = std::move(m_data[i]);
+
+					for (IndexT i = newSize; i < m_size; i++)
+						m_data[i].~T();
+
+					m_allocator.Free(m_data, m_capacity * sizeof(T));
+					m_data = newData;
+					m_size = newSize;
+					m_capacity = newSize;
+				}
+			}
+			else if (newSize > m_size)
+			{
+				Reserve(newSize);
+				for (IndexT i = m_size; i < newSize; i++)
+					new (&m_data[i]) T(std::forward<Args>(constructorArgs)...);
+			}
+		}
+
+		constexpr void Free()
+		{
+			Base::Clear();
+			if (m_data != nullptr)
+			{
+				if (m_data != GetInplaceData())
+					m_allocator.Free(m_data, m_capacity * sizeof(T));
+				m_data = nullptr;
+				m_capacity = 0;
+			}
+		}
+
+	private:
+		constexpr void SetSize(IndexT size)
+		{
+			m_size = size;
+		}
+
+		constexpr T* GetInplaceData()
+		{
+			return static_cast<T*>(static_cast<void*>(m_inplaceData));
+		}
+
+	private:
+		Allocator m_allocator;
+		T* m_data = GetInplaceData();
+		IndexT m_size = 0;
+		IndexT m_capacity = InplaceSize;
+
+		alignas(alignof(T)) Byte m_inplaceData[InplaceSize * sizeof(T)];
+
+		using Base = VectorTypeBase<T, IndexT, InplaceVectorBase<T, IndexT, InplaceSize, Allocator>>;
+		friend class Base;
+	};
 
 	template<typename T, IAllocator Allocator = DefaultAllocator>
 	using SmallVector = VectorBase<T, U16, Allocator>;
 
 	template<typename T, IAllocator Allocator = DefaultAllocator>
+	using Vector = VectorBase<T, U32, Allocator>;
+
+	template<typename T, IAllocator Allocator = DefaultAllocator>
 	using BigVector = VectorBase<T, U64, Allocator>;
+
+	template<typename T, U16 InplaceSize, IAllocator Allocator = DefaultAllocator>
+	using SmallInplaceVector = InplaceVectorBase<T, U16, InplaceSize, Allocator>;
+
+	template<typename T, U32 InplaceSize, IAllocator Allocator = DefaultAllocator>
+	using InplaceVector = InplaceVectorBase<T, U32, InplaceSize, Allocator>;
+
+	template<typename T, U64 InplaceSize, IAllocator Allocator = DefaultAllocator>
+	using BigInplaceVector = InplaceVectorBase<T, U64, InplaceSize, Allocator>;
 }
