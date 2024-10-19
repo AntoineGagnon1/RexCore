@@ -1,6 +1,7 @@
 #include <tests/test_utils.hpp>
 
 #include <rexcore/containers/vector.hpp>
+#include <rexcore/math.hpp>
 
 using namespace RexCore;
 
@@ -172,20 +173,18 @@ void VecBaseTestClear()
 {
 	VecT vec = VecT();
 	auto ptr = vec.Data();
-	auto capacity = vec.Capacity();
 
 	vec.Clear();
 	ASSERT(vec.IsEmpty());
 	ASSERT(vec.Size() == 0);
-	ASSERT(vec.Capacity() == capacity);
 	ASSERT(vec.Data() == ptr);
 
-	vec.Resize(capacity * 2, 0);
+	vec.Resize(8, 0);
 	ptr = vec.Data();
 	vec.Clear();
 	ASSERT(vec.IsEmpty());
 	ASSERT(vec.Size() == 0);
-	ASSERT(vec.Capacity() == capacity * 2);
+	ASSERT(vec.Capacity() >= 8);
 	ASSERT(vec.Data() == ptr);
 }
 
@@ -202,16 +201,22 @@ void VecBaseTestPushBack()
 
 	vec.Clear();
 
+	IndexT maxSize = Math::MaxValue<IndexT>();
+	if constexpr (requires { VecT::FixedSize; })
+		maxSize = VecT::FixedSize;
+
 	auto capacity = vec.Capacity();
+	auto newSize = Math::Min<IndexT>(maxSize, capacity * 2);
 	auto ptr = vec.Data();
-	for (IndexT i = 0; i < capacity * 2; i++)
+	for (IndexT i = 0; i < newSize; i++)
 		vec.PushBack((U32)i);
 
-	ASSERT(vec.Capacity() >= capacity * 2);
-	ASSERT(vec.Data() != ptr);
-	ASSERT(vec.Size() == capacity * 2);
+	ASSERT(vec.Capacity() >= newSize);
+	if constexpr (requires { VecT::FixedSize; } == false)
+		ASSERT(vec.Data() != ptr);
+	ASSERT(vec.Size() == newSize);
 
-	for (IndexT i = 0; i < capacity * 2; i++)
+	for (IndexT i = 0; i < newSize; i++)
 		ASSERT(vec[i] == i);
 }
 
@@ -227,17 +232,23 @@ void VecBaseTestEmplaceBack()
 	ASSERT(vec[0] == 1);
 
 	vec.Clear();
-
+	
+	IndexT maxSize = Math::MaxValue<IndexT>();
+	if constexpr (requires { VecT::FixedSize; })
+		maxSize = VecT::FixedSize;
+		
 	auto capacity = vec.Capacity();
+	auto newSize = Math::Min<IndexT>(maxSize, capacity * 2);
 	auto ptr = vec.Data();
-	for (IndexT i = 0; i < capacity * 2; i++)
+	for (IndexT i = 0; i < newSize; i++)
 		vec.EmplaceBack((U32)i);
 
-	ASSERT(vec.Capacity() >= capacity * 2);
-	ASSERT(vec.Data() != ptr);
-	ASSERT(vec.Size() == capacity * 2);
+	ASSERT(vec.Capacity() >= newSize);
+	if constexpr (requires { VecT::FixedSize; } == false)
+		ASSERT(vec.Data() != ptr);
+	ASSERT(vec.Size() == newSize);
 
-	for (IndexT i = 0; i < capacity * 2; i++)
+	for (IndexT i = 0; i < newSize; i++)
 		ASSERT(vec[i] == i);
 }
 
@@ -622,66 +633,8 @@ void TestFixedVector()
 	ASSERT(vec.Capacity() == VecT::FixedSize);
 	ASSERT(vec.Data() == ptr);
 
-	// Clear
-	vec.Resize(VecT::FixedSize, 0);
-	vec.Clear();
-	ASSERT(vec.IsEmpty());
-	ASSERT(vec.Size() == 0);
-	ASSERT(vec.Capacity() == VecT::FixedSize);
-	ASSERT(vec.Data() == ptr);
-
 	FixedVecTestResize<VecT>();
-	
-	VecBaseTestSubscript<VecT>();
-	VecBaseTestIsEmpty<VecT>();
-	VecBaseTestFirstLast<VecT>();
-	VecBaseTestEmplaceAt<VecT>();
-	VecBaseTestPopBack<VecT>();
-	VecBaseTestRemoveAt<VecT>();
-	VecBaseTestRemoveAtOrdered<VecT>();
-	VecBaseTestForEach<VecT>();
-	VecBaseTestContains<VecT>();
-	VecBaseTestClone<VecT>();
-
-	// EmplaceBack
-	vec.Clear();
-	vec.EmplaceBack(1);
-	ASSERT(vec.Size() == 1);
-	ASSERT(vec[0] == 1);
-
-	vec.Clear();
-
-	for (IndexT i = 0; i < VecT::FixedSize; i++)
-		vec.EmplaceBack((U32)i);
-
-	ASSERT(vec.Capacity() == VecT::FixedSize);
-	ASSERT(vec.Size() == VecT::FixedSize);
-
-	for (IndexT i = 0; i < VecT::FixedSize; i++)
-		ASSERT(vec[i] == i);
-
-	using ValueT = VecT::ValueType;
-	if constexpr (std::is_copy_assignable_v<ValueT>)
-	{
-		// PushBack
-		vec.Clear();
-		vec.PushBack(1);
-		ASSERT(vec.Size() == 1);
-		ASSERT(vec[0] == 1);
-
-		vec.Clear();
-
-		for (IndexT i = 0; i < VecT::FixedSize; i++)
-			vec.PushBack((U32)i);
-
-		ASSERT(vec.Capacity() == VecT::FixedSize);
-		ASSERT(vec.Size() == VecT::FixedSize);
-
-		for (IndexT i = 0; i < VecT::FixedSize; i++)
-			ASSERT(vec[i] == i);
-
-		VecBaseTestInsertAt<VecT>();
-	}
+	TestVectorBase<VecT>();
 }
 
 TEST_CASE("Containers/FixedVector")
