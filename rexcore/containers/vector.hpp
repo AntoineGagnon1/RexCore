@@ -3,6 +3,7 @@
 #include <rexcore/allocators.hpp>
 #include <rexcore/core.hpp>
 #include <rexcore/concepts.hpp>
+#include <rexcore/containers/span.hpp>
 
 namespace RexCore
 {
@@ -14,14 +15,8 @@ namespace RexCore
 	// void Reserve(IndexT newCapacity)
 	// void SetSize(IndexT size)
 	template<typename T, std::unsigned_integral IndexT, typename ParentClass>
-	class VectorTypeBase
+	class VectorTypeBase : public SpanTypeBase<T, IndexT, int, ParentClass> // TODO : fix the span type
 	{
-	public:
-		using Iterator = T*;
-		using ConstIterator = const T*;
-
-		static_assert(std::contiguous_iterator<Iterator>);
-		static_assert(std::contiguous_iterator<ConstIterator>);
 	public:
 		using ValueType = T;
 		using IndexType = IndexT;
@@ -36,7 +31,7 @@ namespace RexCore
 			static_cast<ParentClass*>(this)->Free();
 		}
 
-		ParentClass Clone(this auto&& self)
+		[[nodiscard]] ParentClass Clone(this auto&& self)
 		{
 			static_assert(IClonable<T>, "The value type must be IClonable in order to clone a vector");
 			ParentClass clone;
@@ -44,75 +39,6 @@ namespace RexCore
 			for (const T& item : self)
 				clone.EmplaceBack(RexCore::Clone(item));
 			return clone;
-		}
-
-		[[nodiscard]] constexpr decltype(auto) operator[](this auto&& self, IndexT index)
-		{
-			REX_CORE_ASSERT(index < self.Size());
-			return self.Data()[index];
-		}
-
-		[[nodiscard]] constexpr bool IsEmpty(this auto&& self)
-		{
-			return self.Size() == 0;
-		}
-
-		[[nodiscard]] constexpr decltype(auto) First(this auto&& self)
-		{
-			REX_CORE_ASSERT(self.Size() > 0);
-			return self.Data()[0];
-		}
-
-		[[nodiscard]] constexpr decltype(auto) Last(this auto&& self)
-		{
-			REX_CORE_ASSERT(self.Size() > 0);
-			return self.Data()[self.Size() - 1];
-		}
-
-		[[nodiscard]] constexpr Iterator Begin()
-		{
-			auto self = static_cast<ParentClass*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data();
-		}
-
-		[[nodiscard]] constexpr ConstIterator Begin() const
-		{
-			auto self = static_cast<const ParentClass*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data();
-		}
-
-		[[nodiscard]] constexpr ConstIterator CBegin() const { return Begin(); }
-
-		[[nodiscard]] constexpr Iterator End()
-		{
-			auto self = static_cast<ParentClass*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data() + self->Size();
-		}
-
-		[[nodiscard]] constexpr ConstIterator End() const
-		{
-			auto self = static_cast<const ParentClass*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data() + self->Size();
-		}
-
-		[[nodiscard]] constexpr ConstIterator CEnd() const { return End(); }
-
-		[[nodiscard]] constexpr bool Contains(this auto&& self, const T& value)
-		{
-			for (const auto& item : self)
-			{
-				if (item == value)
-					return true;
-			}
-			return false;
 		}
 
 		constexpr void Clear(this auto&& self)
@@ -222,14 +148,6 @@ namespace RexCore
 
 			self.SetSize(size - 1);
 		}
-
-	public:
-		constexpr Iterator begin() { return Begin(); }
-		constexpr ConstIterator begin() const { return Begin(); }
-		constexpr Iterator end() { return End(); }
-		constexpr ConstIterator end() const { return End(); }
-		constexpr ConstIterator cbegin() const { return CBegin(); }
-		constexpr ConstIterator cend() const { return CEnd(); }
 
 	private:
 		static constexpr U64 GrowthFactor = 2;

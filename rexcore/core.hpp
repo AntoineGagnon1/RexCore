@@ -13,4 +13,8 @@ namespace RexCore
 #define REX_CORE_DEFAULT_MOVE(T) \
 	T(T&&) noexcept = default; \
 	T& operator=(T&&) noexcept = default
+
+#define REX_CORE_DEFAULT_COPY(T) \
+	T(const T&) = default; \
+	T& operator=(const T&) = default
 }
