@@ -12,7 +12,7 @@
 
 namespace RexCore
 {
-	inline void MemCopy(void* source, void* dest, U64 size)
+	inline void MemCopy(const void* source, void* dest, U64 size)
 	{
 		std::memcpy(dest, source, size);
 	}

@@ -4,8 +4,19 @@
 #include <rexcore/containers/span.hpp>
 #include <rexcore/allocators.hpp>
 
+#include <cstring>
+
 namespace RexCore
 {
+	template<typename CharT>
+	inline U64 StringLength(const CharT* str)
+	{
+		if constexpr (std::is_same_v<CharT, char>)
+			return std::strlen(str);
+		else
+			return std::wcslen(str);
+	}
+
 	// Base for string-like types, see String and StringView
 	template<typename CharT, typename StringViewT, typename ParentT>
 	class StringTypeBase
@@ -19,6 +30,53 @@ namespace RexCore
 				return StringViewT();
 
 			return StringViewT(self.Data() + start, Math::Min<U64>(length, self.Size() - start));
+		}
+
+		[[nodiscard]] constexpr bool StartsWith(this auto&& self, StringViewT startsWith)
+		{
+			return self.Size() >= startsWith.Size() && self.SubStr(0, startsWith.Size()) == startsWith;
+		}
+
+		[[nodiscard]] constexpr bool EndsWith(this auto&& self, StringViewT endsWith)
+		{
+			return self.Size() >= endsWith.Size() && self.SubStr(self.Size() - endsWith.Size()) == endsWith;
+		}
+
+		template<typename A, typename B>
+			requires requires () {
+				{ std::declval<A>().Data() } -> std::convertible_to<const CharT*>;
+				{ std::declval<A>().Size() } -> std::convertible_to<U64>;
+				{ std::declval<B>().Data() } -> std::convertible_to<const CharT*>;
+				{ std::declval<B>().Size() } -> std::convertible_to<U64>;
+		}
+		constexpr bool operator==(this const A& a, const B& b)
+		{
+			if (a.Size() != b.Size())
+				return false;
+
+			if (a.Data() == b.Data())
+				return true;
+
+			if constexpr (std::is_same_v<CharT, char>)
+				return std::strncmp(a.Data(), b.Data(), a.Size()) == 0;
+			else
+				return std::wcsncmp(a.Data(), b.Data(), a.Size()) == 0;
+		}
+
+		template<typename A>
+			requires requires () {
+				{ std::declval<A>().Data() } -> std::convertible_to<const CharT*>;
+				{ std::declval<A>().Size() } -> std::convertible_to<U64>;
+		}
+		constexpr bool operator==(this const A& a, const CharT* b)
+		{
+			if (a.Data() == b)
+				return true;
+
+			if constexpr (std::is_same_v<CharT, char>)
+				return (a.Size() == std::strlen(b)) && (std::strncmp(a.Data(), b, a.Size()) == 0);
+			else
+				return (a.Size() == std::wcslen(b)) && (std::wcsncmp(a.Data(), b, a.Size()) == 0);
 		}
 	};
 
@@ -40,6 +98,10 @@ namespace RexCore
 
 		constexpr StringViewBase(const CharT* data, U64 size)
 			: m_data(data), m_size(size)
+		{}
+
+		constexpr StringViewBase(const CharT* nullTerminatedString)
+			: m_data(nullTerminatedString), m_size(StringLength(nullTerminatedString))
 		{}
 
 		[[nodiscard]] constexpr U64 Size() const { return m_size; }
@@ -83,6 +145,14 @@ namespace RexCore
 		REX_CORE_DEFAULT_MOVE(StringBase);
 
 		constexpr StringBase() noexcept = default;
+
+		explicit constexpr StringBase(const CharT* nullTerminatedString)
+		{
+			const U64 length = StringLength(nullTerminatedString);
+			Reserve(length);
+			MemCopy(nullTerminatedString, Data(), length * sizeof(CharT));
+			SetSize(length); // Will add the null terminator
+		}
 
 		[[nodiscard]] constexpr const CharT* Data() const { return IsSmallString() ? m_small : m_big.m_data; }
 		[[nodiscard]] constexpr CharT* Data() { return IsSmallString() ? m_small : m_big.m_data; }

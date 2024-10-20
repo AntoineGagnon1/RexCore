@@ -821,6 +821,65 @@ void TestStringTypeBase(const ViewT& view)
 		for (U64 i = 0; i < 14; i++)
 			ASSERT(oneArg[i] == CharT(i + 2));
 	}
+
+	{ // StartsWith, EndsWith
+		if constexpr (std::is_same_v<CharT, char>)
+		{
+			ViewT v("abcdef123456");
+			ViewT v2("abc");
+			ASSERT(v.StartsWith(v2));
+			ASSERT(v.StartsWith("a"));
+			ASSERT(!v.StartsWith("bcdef"));
+
+			ASSERT(v.EndsWith("456"));
+			ASSERT(v.EndsWith("6"));
+			ASSERT(!v.EndsWith("1234567"));
+		}
+		else
+		{
+			ViewT v(L"abcdef123456");
+			ViewT v2(L"abc");
+			ASSERT(v.StartsWith(v2));
+			ASSERT(v.StartsWith(L"a"));
+			ASSERT(!v.StartsWith(L"bcdef"));
+
+			ASSERT(v.EndsWith(L"456"));
+			ASSERT(v.EndsWith(L"6"));
+			ASSERT(!v.EndsWith(L"1234567"));
+		}
+	}
+
+	// ==, !=
+	{
+		ASSERT(view == view);
+		auto strView = view.SubStr(0);
+		ASSERT(view == strView);
+
+		auto subStr = view.SubStr(0, 5);
+		ASSERT(view != subStr);
+
+		auto empty1 = ViewT();
+		auto empty2 = ViewT();
+		ASSERT(empty1 == empty2);
+
+		if constexpr (std::is_same_v<CharT, char>)
+		{
+			ASSERT(empty1 == "");
+			ViewT v("This is a string view");
+			ASSERT(v == "This is a string view");
+			ASSERT(v != "aaaaaaaaaaaaaaaaaaaaa");
+			ASSERT(v != "This is a different string view");
+		}
+		else
+		{
+			ASSERT(empty1 == L"");
+
+			ViewT v(L"This is a string view");
+			ASSERT(v == L"This is a string view");
+			ASSERT(v != L"aaaaaaaaaaaaaaaaaaaaa");
+			ASSERT(v != L"This is a different string view");
+		}
+	}
 }
 
 template<typename StringT>
@@ -875,11 +934,13 @@ void TestStringView()
 
 TEST_CASE("Containers/StringView")
 {
+	[[maybe_unused]] StringView view = "Hello 123"; // Implicit conversion from c-style string
 	TestStringView<String>();
 }
 
 TEST_CASE("Containers/WStringView")
 {
+	[[maybe_unused]] WStringView view = L"Hello 123"; // Implicit conversion from c-style string
 	TestStringView<WString>();
 }
 
@@ -913,11 +974,37 @@ void TestString()
 
 TEST_CASE("Containers/String")
 {
+	String str("Hello 123");
+
+	ASSERT(str.Size() == 9);
+	ASSERT(str[0] == 'H');
+	ASSERT(str[1] == 'e');
+	ASSERT(str[2] == 'l');
+	ASSERT(str[3] == 'l');
+	ASSERT(str[4] == 'o');
+	ASSERT(str[5] == ' ');
+	ASSERT(str[6] == '1');
+	ASSERT(str[7] == '2');
+	ASSERT(str[8] == '3');
+
 	TestString<String>();
 }
 
 TEST_CASE("Containers/WString")
 {
+	WString str(L"Hello 123");
+
+	ASSERT(str.Size() == 9);
+	ASSERT(str[0] == L'H');
+	ASSERT(str[1] == L'e');
+	ASSERT(str[2] == L'l');
+	ASSERT(str[3] == L'l');
+	ASSERT(str[4] == L'o');
+	ASSERT(str[5] == L' ');
+	ASSERT(str[6] == L'1');
+	ASSERT(str[7] == L'2');
+	ASSERT(str[8] == L'3');
+
 	TestString<WString>();
 }
 
