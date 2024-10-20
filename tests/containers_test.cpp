@@ -79,6 +79,19 @@ void TestSpanTypeBase(SpanT span)
 		ASSERT(subSpan.Size() == 5);
 		for (IndexT i = 0; i < 5; i++)
 			ASSERT(subSpan[i] == ValueT(i + 3));
+
+		SpanT emptySpan = span.SubSpan(16, 5);
+		ASSERT(emptySpan.IsEmpty());
+
+		SpanT overshoot = span.SubSpan(14, 5);
+		ASSERT(overshoot.Size() == 2);
+		for (IndexT i = 0; i < 2; i++)
+			ASSERT(overshoot[i] == ValueT(i + 14));
+
+		SpanT oneArg = span.SubSpan(2);
+		ASSERT(oneArg.Size() == 14);
+		for (IndexT i = 0; i < 14; i++)
+			ASSERT(oneArg[i] == ValueT(i + 2));
 	}
 }
 

@@ -46,7 +46,7 @@ namespace RexCore
 			return false;
 		}
 
-		[[nodiscard]] constexpr SpanT SubSpan(this auto&& self, IndexT start, IndexT length)
+		[[nodiscard]] constexpr SpanT SubSpan(this auto&& self, IndexT start, IndexT length = Math::MaxValue<IndexT>())
 		{
 			if (start >= self.Size())
 				return SpanT();
