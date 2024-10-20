@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-  
+
+  <Type Name="RexCore::SpanBase&lt;*, *&gt;">
+    <DisplayString>{{Size={m_size}}}</DisplayString>
+
+    <Expand>
+      <Item Name="Item Type" ExcludeView="simple">"$T1"</Item>
+      <Item Name="Index Type" ExcludeView="simple">"$T2"</Item>
+      <ArrayItems>
+        <Size>m_size</Size>
+        <ValuePointer>m_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
   <Type Name="RexCore::VectorBase&lt;*, *, *&gt;">
     <DisplayString>{{Size={m_size}}}</DisplayString>
     
