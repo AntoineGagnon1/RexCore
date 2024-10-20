@@ -8,13 +8,14 @@
 
 namespace RexCore
 {
-	template<typename CharT>
-	inline U64 StringLength(const CharT* str)
+	inline U64 StringLength(const char* str)
 	{
-		if constexpr (std::is_same_v<CharT, char>)
-			return std::strlen(str);
-		else
-			return std::wcslen(str);
+		return std::strlen(str);
+	}
+
+	inline U64 StringLength(const wchar_t* wstr)
+	{
+		return std::wcslen(wstr);
 	}
 
 	// Base for string-like types, see String and StringView
