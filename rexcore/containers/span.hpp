@@ -1,5 +1,6 @@
 #pragma once
 #include <rexcore/core.hpp>
+#include <rexcore/math.hpp>
 
 #include <concepts>
 
@@ -11,12 +12,6 @@ namespace RexCore
 	public:
 		using ValueType = T;
 		using IndexType = IndexT;
-
-		using Iterator = T*;
-		using ConstIterator = const T*;
-
-		static_assert(std::contiguous_iterator<Iterator>);
-		static_assert(std::contiguous_iterator<ConstIterator>);
 
 		[[nodiscard]] constexpr decltype(auto) operator[](this auto&& self, IndexT index)
 		{
@@ -41,47 +36,11 @@ namespace RexCore
 			return self.Data()[self.Size() - 1];
 		}
 
-		[[nodiscard]] constexpr Iterator Begin()
-		{
-			auto self = static_cast<ParentT*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data();
-		}
-
-		[[nodiscard]] constexpr ConstIterator Begin() const
-		{
-			auto self = static_cast<const ParentT*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data();
-		}
-
-		[[nodiscard]] constexpr ConstIterator CBegin() const { return Begin(); }
-
-		[[nodiscard]] constexpr Iterator End()
-		{
-			auto self = static_cast<ParentT*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data() + self->Size();
-		}
-
-		[[nodiscard]] constexpr ConstIterator End() const
-		{
-			auto self = static_cast<const ParentT*>(this);
-			if (self->IsEmpty())
-				return nullptr;
-			return self->Data() + self->Size();
-		}
-
-		[[nodiscard]] constexpr ConstIterator CEnd() const { return End(); }
-
 		[[nodiscard]] constexpr bool Contains(this auto&& self, const T& value)
 		{
-			for (const auto& item : self)
+			for (const T& found : self)
 			{
-				if (item == value)
+				if (found == value)
 					return true;
 			}
 			return false;
@@ -92,23 +51,18 @@ namespace RexCore
 			if (start >= self.Size())
 				return SpanT();
 
-			return SpanT(self.Data() + start, Min(length, self.Size() - start));
+			return SpanT(self.Data() + start, Math::Min<IndexT>(length, self.Size() - start));
 		}
-
-	public:
-		// For ranged-based for and other STL functions
-		[[nodiscard]] constexpr Iterator begin() { return Begin(); }
-		[[nodiscard]] constexpr ConstIterator begin() const { return Begin(); }
-		[[nodiscard]] constexpr Iterator end() { return End(); }
-		[[nodiscard]] constexpr ConstIterator end() const { return End(); }
-		[[nodiscard]] constexpr ConstIterator cbegin() const { return CBegin(); }
-		[[nodiscard]] constexpr ConstIterator cend() const { return CEnd(); }
 	};
 
 	template<typename T, std::unsigned_integral IndexT>
 	class SpanBase : public SpanTypeBase<T, IndexT, SpanBase<T, IndexT>, SpanBase<T, IndexT>>
 	{
 	public:
+		using ConstIterator = const T*;
+		static_assert(std::contiguous_iterator<ConstIterator>);
+
+
 		REX_CORE_DEFAULT_COPY(SpanBase);
 		REX_CORE_DEFAULT_MOVE(SpanBase);
 
@@ -123,11 +77,18 @@ namespace RexCore
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
 		[[nodiscard]] constexpr const T* Data() const { return m_data; }
 
-		[[nodiscard]] constexpr const T& operator[](IndexT index) const
-		{
-			REX_CORE_ASSERT(index < m_size);
-			return m_data[index];
-		}
+		[[nodiscard]] constexpr ConstIterator Begin() const { return m_data; }
+		[[nodiscard]] constexpr ConstIterator CBegin() const { return m_data; }
+
+		[[nodiscard]] constexpr ConstIterator End() const { return m_data + m_size; }
+		[[nodiscard]] constexpr ConstIterator CEnd() const { return m_data + m_size; }
+
+	public:
+		// For ranged-based for and other STL functions
+		[[nodiscard]] constexpr ConstIterator begin() const { return Begin(); }
+		[[nodiscard]] constexpr ConstIterator end() const { return End(); }
+		[[nodiscard]] constexpr ConstIterator cbegin() const { return CBegin(); }
+		[[nodiscard]] constexpr ConstIterator cend() const { return CEnd(); }
 
 	private:
 		const T* m_data;

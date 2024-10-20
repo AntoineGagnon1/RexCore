@@ -15,11 +15,17 @@ namespace RexCore
 	// void Reserve(IndexT newCapacity)
 	// void SetSize(IndexT size)
 	template<typename T, std::unsigned_integral IndexT, typename ParentClass>
-	class VectorTypeBase : public SpanTypeBase<T, IndexT, int, ParentClass> // TODO : fix the span type
+	class VectorTypeBase : public SpanTypeBase<T, IndexT, SpanBase<T, IndexT>, ParentClass>
 	{
 	public:
 		using ValueType = T;
 		using IndexType = IndexT;
+		using SpanType = SpanBase<T, IndexT>;
+
+		using Iterator = T*;
+		using ConstIterator = const T*;
+		static_assert(std::contiguous_iterator<Iterator>);
+		static_assert(std::contiguous_iterator<ConstIterator>);
 
 		REX_CORE_NO_COPY(VectorTypeBase);
 		REX_CORE_DEFAULT_MOVE(VectorTypeBase);
@@ -40,6 +46,42 @@ namespace RexCore
 				clone.EmplaceBack(RexCore::Clone(item));
 			return clone;
 		}
+
+		[[nodiscard]] constexpr Iterator Begin()
+		{
+			auto self = static_cast<ParentClass*>(this);
+			if (self->IsEmpty())
+				return nullptr;
+			return self->Data();
+		}
+
+		[[nodiscard]] constexpr ConstIterator Begin() const
+		{
+			auto self = static_cast<const ParentClass*>(this);
+			if (self->IsEmpty())
+				return nullptr;
+			return self->Data();
+		}
+
+		[[nodiscard]] constexpr ConstIterator CBegin() const { return Begin(); }
+
+		[[nodiscard]] constexpr Iterator End()
+		{
+			auto self = static_cast<ParentClass*>(this);
+			if (self->IsEmpty())
+				return nullptr;
+			return self->Data() + self->Size();
+		}
+
+		[[nodiscard]] constexpr ConstIterator End() const
+		{
+			auto self = static_cast<const ParentClass*>(this);
+			if (self->IsEmpty())
+				return nullptr;
+			return self->Data() + self->Size();
+		}
+
+		[[nodiscard]] constexpr ConstIterator CEnd() const { return End(); }
 
 		constexpr void Clear(this auto&& self)
 		{
@@ -148,6 +190,15 @@ namespace RexCore
 
 			self.SetSize(size - 1);
 		}
+
+	public:
+		// For ranged-based for and other STL functions
+		[[nodiscard]] constexpr Iterator begin() { return Begin(); }
+		[[nodiscard]] constexpr ConstIterator begin() const { return Begin(); }
+		[[nodiscard]] constexpr Iterator end() { return End(); }
+		[[nodiscard]] constexpr ConstIterator end() const { return End(); }
+		[[nodiscard]] constexpr ConstIterator cbegin() const { return CBegin(); }
+		[[nodiscard]] constexpr ConstIterator cend() const { return CEnd(); }
 
 	private:
 		static constexpr U64 GrowthFactor = 2;

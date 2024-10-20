@@ -32,6 +32,93 @@ public:
 	U32 value;
 };
 
+// The span must be filled with : {0, 1, 2, 3, 4, 5, 6, ..., 15} 
+template<typename SpanT>
+void TestSpanTypeBase(SpanT span)
+{
+	using ValueT = SpanT::ValueType;
+	using IndexT = SpanT::IndexType;
+
+	{ // Operator []
+		for (IndexT i = 0; i < 16; i++)
+			ASSERT(span[i] == ValueT(i));
+	}
+	
+	{ // IsEmpty
+		ASSERT(!span.IsEmpty());
+		SpanT span2;
+		ASSERT(span2.IsEmpty());
+	}
+
+	{ // First and Last
+		ASSERT(span.First() == ValueT(0));
+		ASSERT(span.Last() == ValueT(15));
+	}
+
+	{ // Begin and End
+		ASSERT(span.Begin() == span.Data());
+		ASSERT(span.CBegin() == span.Data());
+		ASSERT(span.End() == span.Data() + span.Size());
+		ASSERT(span.CEnd() == span.Data() + span.Size());
+		
+		ASSERT(*span.Begin() == ValueT(0));
+		ASSERT(*span.CBegin() == ValueT(0));
+		ASSERT(*(span.End() - 1) == ValueT(15));
+		ASSERT(*(span.CEnd() - 1) == ValueT(15));
+	}
+
+	{ // Contains
+		for (IndexT i = 0; i < 16; i++)
+			ASSERT(span.Contains(ValueT(i)));
+
+		ASSERT(!span.Contains(ValueT(100)));
+	}
+
+	{ // SubSpan
+		SpanT subSpan = span.SubSpan(3, 5);
+		ASSERT(subSpan.Size() == 5);
+		for (IndexT i = 0; i < 5; i++)
+			ASSERT(subSpan[i] == ValueT(i + 3));
+	}
+}
+
+TEST_CASE("Containers/Span")
+{
+	{ // Empty span
+		Span<U32> span = Span<U32>();
+		ASSERT(span.Data() == nullptr);
+		ASSERT(span.Size() == 0);
+		ASSERT(span.IsEmpty());
+	}
+	{ // Data() and Size()
+		Vector<U32> vec = Vector<U32>();
+		for (U32 i = 0; i < 16; i++)
+			vec.EmplaceBack(i);
+
+		Span<U32> span = Span(vec.Data(), vec.Size());
+		ASSERT(span.Data() == vec.Data());
+		ASSERT(span.Size() == vec.Size());
+
+		for (U32 i = 0; i < 16; i++)
+			ASSERT(span[i] == i);
+	}
+
+	{ // Foreach
+		Vector<U32> vec = Vector<U32>();
+		vec.Resize(16, 0);
+		Span span = Span(vec.Data(), vec.Size());
+		for (const U32& value : span)
+			ASSERT(value == 0);
+	}
+
+	{
+		Vector<U32> vec = Vector<U32>();
+		for (U32 i = 0; i < 16; i++)
+			vec.EmplaceBack(i);
+		TestSpanTypeBase(Span(vec.Data(), vec.Size()));
+	}
+}
+
 template<typename VecT>
 void VecTestReserve()
 {
@@ -452,6 +539,15 @@ void TestVectorBase()
 	VecBaseTestClone<VecT>();
 	VecBaseTestPushBack<VecT>();
 	VecBaseTestInsertAt<VecT>();
+
+	using ValueT = VecT::ValueType;
+	using IndexT = VecT::IndexType;
+	using SpanT = VecT::SpanType;
+
+	VecT vec = VecT();
+	for (IndexT i = 0; i < 16; i++)
+		vec.EmplaceBack(ValueT(i));
+	TestSpanTypeBase(SpanT(vec.Data(), vec.Size()));
 }
 
 template<typename VecT>
