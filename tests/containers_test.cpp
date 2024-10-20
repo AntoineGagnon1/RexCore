@@ -74,21 +74,32 @@ void TestSpanTypeBase(SpanT span)
 		ASSERT(!span.Contains(ValueT(100)));
 	}
 
+	{ // TryFind
+		for (IndexT i = 0; i < 16; i++)
+		{
+			ASSERT(*span.TryFind(ValueT(i)) == ValueT(i));
+			ASSERT(*span.TryFind([i](const ValueT& v) { return v == ValueT(i); }) == ValueT(i));
+		}
+
+		ASSERT(span.TryFind(ValueT(100)) == nullptr);
+		ASSERT(span.TryFind([](const ValueT& v) { return v == ValueT(100); }) == nullptr);
+	}
+
 	{ // SubSpan
-		SpanT subSpan = span.SubSpan(3, 5);
+		const SpanT subSpan = span.SubSpan(3, 5);
 		ASSERT(subSpan.Size() == 5);
 		for (IndexT i = 0; i < 5; i++)
 			ASSERT(subSpan[i] == ValueT(i + 3));
 
-		SpanT emptySpan = span.SubSpan(16, 5);
+		const SpanT emptySpan = span.SubSpan(16, 5);
 		ASSERT(emptySpan.IsEmpty());
 
-		SpanT overshoot = span.SubSpan(14, 5);
+		const SpanT overshoot = span.SubSpan(14, 5);
 		ASSERT(overshoot.Size() == 2);
 		for (IndexT i = 0; i < 2; i++)
 			ASSERT(overshoot[i] == ValueT(i + 14));
 
-		SpanT oneArg = span.SubSpan(2);
+		const SpanT oneArg = span.SubSpan(2);
 		ASSERT(oneArg.Size() == 14);
 		for (IndexT i = 0; i < 14; i++)
 			ASSERT(oneArg[i] == ValueT(i + 2));
@@ -553,14 +564,22 @@ void TestVectorBase()
 	VecBaseTestPushBack<VecT>();
 	VecBaseTestInsertAt<VecT>();
 
-	using ValueT = VecT::ValueType;
-	using IndexT = VecT::IndexType;
-	using SpanT = VecT::SpanType;
+	{ // Span functions
+		using ValueT = VecT::ValueType;
+		using IndexT = VecT::IndexType;
+		using SpanT = VecT::SpanType;
 
-	VecT vec = VecT();
-	for (IndexT i = 0; i < 16; i++)
-		vec.EmplaceBack(ValueT(i));
-	TestSpanTypeBase(SpanT(vec.Data(), vec.Size()));
+		VecT vec = VecT();
+		for (IndexT i = 0; i < 16; i++)
+			vec.EmplaceBack(ValueT(i));
+
+		*vec.TryFind(ValueT(4)) = ValueT(4); // Make sure that TryFind is not const on Vectors
+
+		const VecT& ref = vec;
+		[[maybe_unused]] auto tmp = ref.TryFind(ValueT(4)); // Make sure that the const version is still available on vectors
+
+		TestSpanTypeBase(SpanT(vec.Data(), vec.Size()));
+	}
 }
 
 template<typename VecT>

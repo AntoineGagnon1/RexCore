@@ -20,4 +20,14 @@ namespace RexCore
 		else
 			return obj.Clone();
 	}
+
+	template<typename PredT, typename ...Args>
+	concept IPredicate = requires(const PredT p, Args ...args)
+	{
+		{ p(args...) } -> std::convertible_to<bool>;
+	};
+
+	// To use for references call CopyConst<T, U>& instead of CopyConst<T, U&>
+	template<typename From, typename To>
+	using CopyConst = std::conditional_t<std::is_const_v<std::remove_reference_t<From>>, std::add_const_t<To>, To>;
 }

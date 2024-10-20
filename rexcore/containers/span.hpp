@@ -1,11 +1,13 @@
 #pragma once
 #include <rexcore/core.hpp>
 #include <rexcore/math.hpp>
+#include <rexcore/concepts.hpp>
 
 #include <concepts>
 
 namespace RexCore
 {
+	// T should include the const for const spans
 	template<typename T, std::unsigned_integral IndexT, typename SpanT, typename ParentT>
 	class SpanTypeBase
 	{
@@ -13,7 +15,7 @@ namespace RexCore
 		using ValueType = T;
 		using IndexType = IndexT;
 
-		[[nodiscard]] constexpr decltype(auto) operator[](this auto&& self, IndexT index)
+		[[nodiscard]] constexpr auto operator[](this auto&& self, IndexT index) -> CopyConst<decltype(self), T>&
 		{
 			REX_CORE_ASSERT(index < self.Size());
 			return self.Data()[index];
@@ -46,6 +48,29 @@ namespace RexCore
 			return false;
 		}
 
+		// Will return nullptr if not found
+		[[nodiscard]] constexpr auto TryFind(this auto&& self, const T& value) -> CopyConst<decltype(self), T>*
+		{
+			for (CopyConst<decltype(self), T>& found : self)
+			{
+				if (found == value)
+					return &found;
+			}
+			return nullptr;
+		}
+
+		// Will return nullptr if not found
+		template<IPredicate<const T&> Predicate>
+		[[nodiscard]] constexpr auto TryFind(this auto&& self, Predicate&& predicate) -> CopyConst<decltype(self), T>*
+		{
+			for (CopyConst<decltype(self), T>& found : self)
+			{
+				if (predicate(found))
+					return &found;
+			}
+			return nullptr;
+		}
+
 		[[nodiscard]] constexpr SpanT SubSpan(this auto&& self, IndexT start, IndexT length = Math::MaxValue<IndexT>())
 		{
 			if (start >= self.Size())
@@ -56,7 +81,7 @@ namespace RexCore
 	};
 
 	template<typename T, std::unsigned_integral IndexT>
-	class SpanBase : public SpanTypeBase<T, IndexT, SpanBase<T, IndexT>, SpanBase<T, IndexT>>
+	class SpanBase : public SpanTypeBase<const T, IndexT, SpanBase<T, IndexT>, SpanBase<T, IndexT>>
 	{
 	public:
 		using ConstIterator = const T*;
