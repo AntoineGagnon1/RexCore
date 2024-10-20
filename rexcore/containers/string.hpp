@@ -6,8 +6,25 @@
 
 namespace RexCore
 {
+	// Base for string-like types, see String and StringView
+	template<typename CharT, typename StringViewT, typename ParentT>
+	class StringTypeBase
+	{
+	public:
+		using CharType = CharT;
+		
+		[[nodiscard]] constexpr StringViewT SubStr(this auto&& self, U64 start, U64 length = Math::MaxValue<U64>())
+		{
+			if (start >= self.Size())
+				return StringViewT();
+
+			return StringViewT(self.Data() + start, Math::Min<U64>(length, self.Size() - start));
+		}
+	};
+
 	template<typename CharT>
 	class StringViewBase : public SpanTypeBase<const CharT, U64, StringViewBase<CharT>, StringViewBase<CharT>>
+						 , public StringTypeBase<CharT, StringViewBase<CharT>, StringViewBase<CharT>>
 	{
 	public:
 		using ConstIterator = const CharT*;
@@ -51,6 +68,7 @@ namespace RexCore
 
 	template<typename CharT, IAllocator Allocator, U64 InplaceSize = 0>
 	class StringBase : public VectorTypeBase<CharT, U64, StringBase<CharT, Allocator, InplaceSize>>
+					 , public StringTypeBase<CharT, StringViewBase<CharT>, StringBase<CharT, Allocator, InplaceSize>>
 	{
 	private:
 		constexpr static U64 SmallStringSize = Math::Max((sizeof(U64) + sizeof(CharT*)) / sizeof(CharT), InplaceSize + 1);
@@ -59,7 +77,6 @@ namespace RexCore
 	public:
 		using AllocatorType = Allocator;
 		using StringViewType = StringViewBase<CharT>;
-		using CharType = CharT;
 		constexpr static U64 InplaceCapacity = SmallStringSize - 1;
 
 		REX_CORE_NO_COPY(StringBase);
@@ -150,7 +167,7 @@ namespace RexCore
 			}
 		}
 
-		constexpr operator StringViewBase<CharT>() const { return StringViewBase<CharT>(Data(), Size()); }
+		constexpr operator StringViewType() const { return StringViewType(Data(), Size()); }
 
 	private:
 		constexpr void SetSize(U64 size)

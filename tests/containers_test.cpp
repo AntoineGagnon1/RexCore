@@ -795,40 +795,32 @@ TEST_CASE("Containers/FixedVector")
 	TestFixedVector<BigFixedVector<MoveOnlyType, 32>>();
 }
 
-template<typename StringT>
-void TestString()
+
+// view must be filled with : {0, 1, 2, 3, 4, 5, 6, ..., 15}
+template<typename ViewT>
+void TestStringTypeBase(const ViewT& view)
 {
-	StringT str = StringT();
-	ASSERT(str.IsEmpty());
-	ASSERT(str.Size() == 0);
-	ASSERT(str.Capacity() > 0);
-	ASSERT(str.Data() != nullptr);
+	using CharT = ViewT::CharType;
 
-	VecTestReserve<StringT>();
-	InplaceVecTestResize<StringT>();
-	InplaceVecTestFree<StringT>();
+	{ // SubStr
+		const auto subStr = view.SubStr(3, 5);
+		ASSERT(subStr.Size() == 5);
+		for (U64 i = 0; i < 5; i++)
+			ASSERT(subStr[i] == CharT(i + 3));
 
-	TestVectorBase<StringT>();
-}
+		const auto emptyView = view.SubStr(16, 5);
+		ASSERT(emptyView.IsEmpty());
 
-TEST_CASE("Containers/String")
-{
-	TestString<String>();
-}
+		const auto overshoot = view.SubStr(14, 5);
+		ASSERT(overshoot.Size() == 2);
+		for (U64 i = 0; i < 2; i++)
+			ASSERT(overshoot[i] == CharT(i + 14));
 
-TEST_CASE("Containers/WString")
-{
-	TestString<WString>();
-}
-
-TEST_CASE("Containers/InplaceString")
-{
-	TestString<InplaceString<32>>();
-}
-
-TEST_CASE("Containers/InplaceWString")
-{
-	TestString<InplaceWString<32>>();
+		const auto oneArg = view.SubStr(2);
+		ASSERT(oneArg.Size() == 14);
+		for (U64 i = 0; i < 14; i++)
+			ASSERT(oneArg[i] == CharT(i + 2));
+	}
 }
 
 template<typename StringT>
@@ -864,6 +856,14 @@ void TestStringView()
 			ASSERT(value == CharT('a'));
 	}
 
+	{ // StringTypeBase functions
+		StringT str;
+		for (CharT i = 0; i < 16; i++)
+			str.EmplaceBack(i);
+
+		TestStringTypeBase<StringViewT>(str);
+	}
+
 	{ // SpanBase functions
 		StringT str;
 		for (CharT i = 0; i < 16; i++)
@@ -881,4 +881,52 @@ TEST_CASE("Containers/StringView")
 TEST_CASE("Containers/WStringView")
 {
 	TestStringView<WString>();
+}
+
+template<typename StringT>
+void TestString()
+{
+	using CharT = StringT::CharType;
+
+	{
+		StringT str = StringT();
+		ASSERT(str.IsEmpty());
+		ASSERT(str.Size() == 0);
+		ASSERT(str.Capacity() > 0);
+		ASSERT(str.Data() != nullptr);
+	}
+
+	VecTestReserve<StringT>();
+	InplaceVecTestResize<StringT>();
+	InplaceVecTestFree<StringT>();
+
+	TestVectorBase<StringT>();
+
+	{ // StringTypeBase functions
+		StringT str;
+		for (CharT i = 0; i < 16; i++)
+			str.EmplaceBack(i);
+
+		TestStringTypeBase<StringT>(str);
+	}
+}
+
+TEST_CASE("Containers/String")
+{
+	TestString<String>();
+}
+
+TEST_CASE("Containers/WString")
+{
+	TestString<WString>();
+}
+
+TEST_CASE("Containers/InplaceString")
+{
+	TestString<InplaceString<32>>();
+}
+
+TEST_CASE("Containers/InplaceWString")
+{
+	TestString<InplaceWString<32>>();
 }
