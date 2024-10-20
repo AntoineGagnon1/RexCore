@@ -24,7 +24,7 @@
     <Expand>
       <Item Name="Size" ExcludeView="simple">m_size</Item>
       <Item Name="Capacity" ExcludeView="simple">m_capacity</Item>
-      <Item Name="Inplace Size" ExcludeView="simple">"$T3"</Item>
+      <Item Name="Inplace Size" ExcludeView="simple">size_t($T3)</Item>
       <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
       <Item Name="Item Type" ExcludeView="simple">"$T1"</Item>
       <Item Name="Index Type" ExcludeView="simple">"$T2"</Item>
@@ -41,13 +41,30 @@
 
     <Expand>
       <Item Name="Size" ExcludeView="simple">m_size</Item>
-      <Item Name="Fixed Size" ExcludeView="simple">"$T3"</Item>
+      <Item Name="Fixed Size" ExcludeView="simple">size_t($T3)</Item>
       <Item Name="Item Type" ExcludeView="simple">"$T1"</Item>
       <Item Name="Index Type" ExcludeView="simple">"$T2"</Item>
 
       <ArrayItems>
         <Size>m_size</Size>
         <ValuePointer>($T1*)(void*)m_inplaceData</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <Type Name="RexCore::StringBase&lt;*, *, *&gt;">
+    <DisplayString>{m_size &amp; SmallStringBitMask ? m_small : m_big.m_data, na}{{Size={m_size&amp;(~SmallStringBitMask)}}}</DisplayString>
+    <StringView>m_size &amp; SmallStringBitMask ? m_small : m_big.m_data, na</StringView>
+
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">m_size&amp;(~SmallStringBitMask)</Item>
+      <Item Name="Capacity" ExcludeView="simple">m_size &amp; SmallStringBitMask ? SmallStringSize - 1 : m_big.m_capacity</Item>
+      <Item Name="Inplace Size" Condition="$T3 != 0" ExcludeView="simple">size_t($T3)</Item>
+      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
+
+      <ArrayItems>
+        <Size>m_size&amp;(~SmallStringBitMask)</Size>
+        <ValuePointer>m_size &amp; SmallStringBitMask ? m_small : m_big.m_data</ValuePointer>
       </ArrayItems>
     </Expand>
   </Type>
