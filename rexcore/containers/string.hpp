@@ -1,10 +1,54 @@
 #pragma once
 
 #include <rexcore/containers/vector.hpp>
+#include <rexcore/containers/span.hpp>
 #include <rexcore/allocators.hpp>
 
 namespace RexCore
 {
+	template<typename CharT>
+	class StringViewBase : public SpanTypeBase<const CharT, U64, StringViewBase<CharT>, StringViewBase<CharT>>
+	{
+	public:
+		using ConstIterator = const CharT*;
+		static_assert(std::contiguous_iterator<ConstIterator>);
+
+
+		REX_CORE_DEFAULT_COPY(StringViewBase);
+		REX_CORE_DEFAULT_MOVE(StringViewBase);
+
+		constexpr StringViewBase()
+			: m_data(nullptr), m_size(0)
+		{}
+
+		constexpr StringViewBase(const CharT* data, U64 size)
+			: m_data(data), m_size(size)
+		{}
+
+		[[nodiscard]] constexpr U64 Size() const { return m_size; }
+		[[nodiscard]] constexpr const CharT* Data() const { return m_data; }
+
+		[[nodiscard]] constexpr ConstIterator Begin() const { return m_data; }
+		[[nodiscard]] constexpr ConstIterator CBegin() const { return m_data; }
+
+		[[nodiscard]] constexpr ConstIterator End() const { return m_data + m_size; }
+		[[nodiscard]] constexpr ConstIterator CEnd() const { return m_data + m_size; }
+
+	public:
+		// For ranged-based for and other STL functions
+		[[nodiscard]] constexpr ConstIterator begin() const { return Begin(); }
+		[[nodiscard]] constexpr ConstIterator end() const { return End(); }
+		[[nodiscard]] constexpr ConstIterator cbegin() const { return CBegin(); }
+		[[nodiscard]] constexpr ConstIterator cend() const { return CEnd(); }
+
+	private:
+		const CharT* m_data;
+		U64 m_size;
+	};
+
+	using StringView = StringViewBase<char>;
+	using WStringView = StringViewBase<wchar_t>;
+
 	template<typename CharT, IAllocator Allocator, U64 InplaceSize = 0>
 	class StringBase : public VectorTypeBase<CharT, U64, StringBase<CharT, Allocator, InplaceSize>>
 	{
@@ -14,6 +58,8 @@ namespace RexCore
 
 	public:
 		using AllocatorType = Allocator;
+		using StringViewType = StringViewBase<CharT>;
+		using CharType = CharT;
 		constexpr static U64 InplaceCapacity = SmallStringSize - 1;
 
 		REX_CORE_NO_COPY(StringBase);
@@ -103,6 +149,8 @@ namespace RexCore
 				SetSize(0);
 			}
 		}
+
+		constexpr operator StringViewBase<CharT>() const { return StringViewBase<CharT>(Data(), Size()); }
 
 	private:
 		constexpr void SetSize(U64 size)

@@ -830,3 +830,55 @@ TEST_CASE("Containers/InplaceWString")
 {
 	TestString<InplaceWString<32>>();
 }
+
+template<typename StringT>
+void TestStringView()
+{
+	using StringViewT = typename StringT::StringViewType;
+	using CharT = typename StringT::CharType;
+
+	{ // Empty view
+		StringViewT view;
+		ASSERT(view.Data() == nullptr);
+		ASSERT(view.Size() == 0);
+		ASSERT(view.IsEmpty());
+	}
+	{ // Data() and Size()
+		StringT str = StringT();
+		for (CharT i = 0; i < 16; i++)
+			str.EmplaceBack(i);
+
+		StringViewT view = str;
+		ASSERT(view.Data() == str.Data());
+		ASSERT(view.Size() == str.Size());
+
+		for (U32 i = 0; i < 16; i++)
+			ASSERT(view[i] == CharT(i));
+	}
+
+	{ // Foreach
+		StringT str = StringT();
+		str.Resize(16, CharT('a'));
+		StringViewT view = str;
+		for (const CharT& value : view)
+			ASSERT(value == CharT('a'));
+	}
+
+	{ // SpanBase functions
+		StringT str;
+		for (CharT i = 0; i < 16; i++)
+			str.EmplaceBack(i);
+
+		TestSpanTypeBase<StringViewT>(str);
+	}
+}
+
+TEST_CASE("Containers/StringView")
+{
+	TestStringView<String>();
+}
+
+TEST_CASE("Containers/WStringView")
+{
+	TestStringView<WString>();
+}

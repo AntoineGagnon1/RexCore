@@ -14,13 +14,13 @@ namespace RexCore
 	// IndexT Capacity()
 	// void Reserve(IndexT newCapacity)
 	// void SetSize(IndexT size)
-	template<typename T, std::unsigned_integral IndexT, typename ParentClass>
-	class VectorTypeBase : public SpanTypeBase<T, IndexT, SpanBase<T, IndexT>, ParentClass>
+	template<typename T, std::unsigned_integral IndexT, typename ParentClass, typename SpanT = SpanBase<T, IndexT>>
+	class VectorTypeBase : public SpanTypeBase<T, IndexT, SpanT, ParentClass>
 	{
 	public:
 		using ValueType = T;
 		using IndexType = IndexT;
-		using SpanType = SpanBase<T, IndexT>;
+		using SpanType = SpanT;
 
 		using Iterator = T*;
 		using ConstIterator = const T*;
