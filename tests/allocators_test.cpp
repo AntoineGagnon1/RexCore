@@ -32,7 +32,7 @@ TEST_CASE("Allocators/PageFunctions")
 	void* ptr = ReservePages(3);
 	ASSERT(ptr != nullptr);
 	CommitPages(ptr, 3);
-	MemCopy((void*)"PageFunctions", ptr, 16);
+	MemCopy((void*)"PageFunctions", ptr, 13);
 	
 	DecommitPages(ptr, 3);
 	ReleasePages(ptr, 3);
