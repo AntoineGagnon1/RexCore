@@ -869,6 +869,7 @@ void TestStringTypeBase(const ViewT& view)
 			ASSERT(v == "This is a string view");
 			ASSERT(v != "aaaaaaaaaaaaaaaaaaaaa");
 			ASSERT(v != "This is a different string view");
+			ASSERT(v != empty1);
 		}
 		else
 		{
@@ -878,6 +879,41 @@ void TestStringTypeBase(const ViewT& view)
 			ASSERT(v == L"This is a string view");
 			ASSERT(v != L"aaaaaaaaaaaaaaaaaaaaa");
 			ASSERT(v != L"This is a different string view");
+			ASSERT(v != empty1);
+		}
+	}
+
+	// <, <=, >, >=
+	{
+		if constexpr (std::is_same_v<CharT, char>)
+		{
+			ViewT v("abcdefg");
+			ViewT v2("abcg");
+			auto empty = ViewT();
+
+			ASSERT(v < v2);
+			ASSERT(v <= v2);
+			ASSERT(v2 > v);
+			ASSERT(v2 >= v);
+			ASSERT(v > empty);
+			ASSERT(v >= empty);
+			ASSERT(empty < v);
+			ASSERT(empty <= v);
+		}
+		else
+		{
+			ViewT v(L"abcdefg");
+			ViewT v2(L"abcg");
+			auto empty = ViewT();
+
+			ASSERT(v < v2);
+			ASSERT(v <= v2);
+			ASSERT(v2 > v);
+			ASSERT(v2 >= v);
+			ASSERT(v > empty);
+			ASSERT(v >= empty);
+			ASSERT(empty < v);
+			ASSERT(empty <= v);
 		}
 	}
 }

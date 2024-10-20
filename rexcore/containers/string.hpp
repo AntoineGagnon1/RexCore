@@ -5,6 +5,7 @@
 #include <rexcore/allocators.hpp>
 
 #include <cstring>
+#include <compare>
 
 namespace RexCore
 {
@@ -16,6 +17,26 @@ namespace RexCore
 	inline U64 StringLength(const wchar_t* wstr)
 	{
 		return std::wcslen(wstr);
+	}
+
+	inline S32 StringCompare(const char* a, const char* b)
+	{
+		return std::strcmp(a, b);
+	}
+
+	inline S32 StringCompare(const wchar_t* a, const wchar_t* b)
+	{
+		return std::wcscmp(a, b);
+	}
+
+	inline S32 StringCompare(const char* a, const char* b, U64 length)
+	{
+		return std::strncmp(a, b, length);
+	}
+
+	inline S32 StringCompare(const wchar_t* a, const wchar_t* b, U64 length)
+	{
+		return std::wcsncmp(a, b, length);
 	}
 
 	// Base for string-like types, see String and StringView
@@ -50,7 +71,7 @@ namespace RexCore
 				{ std::declval<B>().Data() } -> std::convertible_to<const CharT*>;
 				{ std::declval<B>().Size() } -> std::convertible_to<U64>;
 		}
-		constexpr bool operator==(this const A& a, const B& b)
+		[[nodiscard]] constexpr bool operator==(this const A& a, const B& b)
 		{
 			if (a.Size() != b.Size())
 				return false;
@@ -58,10 +79,10 @@ namespace RexCore
 			if (a.Data() == b.Data())
 				return true;
 
-			if constexpr (std::is_same_v<CharT, char>)
-				return std::strncmp(a.Data(), b.Data(), a.Size()) == 0;
-			else
-				return std::wcsncmp(a.Data(), b.Data(), a.Size()) == 0;
+			if (a.Data() == nullptr || b.Data() == nullptr)
+				return false;
+
+			return StringCompare(a.Data(), b.Data(), a.Size()) == 0;
 		}
 
 		template<typename A>
@@ -69,15 +90,43 @@ namespace RexCore
 				{ std::declval<A>().Data() } -> std::convertible_to<const CharT*>;
 				{ std::declval<A>().Size() } -> std::convertible_to<U64>;
 		}
-		constexpr bool operator==(this const A& a, const CharT* b)
+		[[nodiscard]] constexpr bool operator==(this const A& a, const CharT* b)
 		{
 			if (a.Data() == b)
 				return true;
 
-			if constexpr (std::is_same_v<CharT, char>)
-				return (a.Size() == std::strlen(b)) && (std::strncmp(a.Data(), b, a.Size()) == 0);
+			if (b == nullptr)
+				return a.Size() == 0;
+
+			return (a.Size() == StringLength(b)) && StringCompare(a.Data(), b, a.Size()) == 0;
+		}
+
+		template<typename A, typename B>
+			requires requires () {
+				{ std::declval<A>().Data() } -> std::convertible_to<const CharT*>;
+				{ std::declval<A>().Size() } -> std::convertible_to<U64>;
+				{ std::declval<B>().Data() } -> std::convertible_to<const CharT*>;
+				{ std::declval<B>().Size() } -> std::convertible_to<U64>;
+		}
+
+		[[nodiscard]] constexpr std::strong_ordering operator<=>(this const A& a, const B& b)
+		{
+			if (a.Data() == b.Data())
+				return std::strong_ordering::equal;
+			
+			if (a.Data() == nullptr)
+				return std::strong_ordering::less;
+
+			if (b.Data() == nullptr)
+				return std::strong_ordering::greater;
+
+			const S32 result = StringCompare(a.Data(), b.Data(), Math::Min(a.Size(), b.Size()));
+			if (result < 0)
+				return std::strong_ordering::less;
+			else if (result > 0)
+				return std::strong_ordering::greater;
 			else
-				return (a.Size() == std::wcslen(b)) && (std::wcsncmp(a.Data(), b, a.Size()) == 0);
+				return a.Size() <=> b.Size();
 		}
 	};
 
