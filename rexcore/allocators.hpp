@@ -1,6 +1,6 @@
 #pragma once
 
-#include <rexcore/types.hpp>
+#include <rexcore/core.hpp>
 #include <rexcore/config.hpp>
 #include <rexcore/system_headers.hpp>
 #include <rexcore/math.hpp>
