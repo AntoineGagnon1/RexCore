@@ -1006,41 +1006,98 @@ void TestString()
 
 		TestStringTypeBase<StringT>(str);
 	}
+
+	if constexpr (std::is_same_v<CharT, char>)
+	{
+		{ // +=
+			String str("Hello");
+			str += " World!";
+			ASSERT(str == "Hello World!");
+
+			str += "";
+			ASSERT(str == "Hello World!");
+
+			const String str2(" Test");
+			str += str2;
+			ASSERT(str == "Hello World! Test");
+
+			String str3;
+			str3 += str;
+			ASSERT(str3 == "Hello World! Test");
+
+			String str4;
+			const String str5;
+			str4 += str5;
+			ASSERT(str4.IsEmpty());
+		}
+
+		{ // +
+			String str("Hello");
+			ASSERT(str + " World!" == "Hello World!");
+
+			ASSERT(str + " World!" + "" == "Hello World!");
+
+			const String str2(" Test");
+			ASSERT(str + " World!" + str2 == "Hello World! Test");
+
+			String str3;
+			ASSERT(str3 + str == "Hello");
+
+			String str4;
+			const String str5;
+			ASSERT((str4 + str5).IsEmpty());
+		}
+	}
+	else
+	{
+		{ // +=
+			WString str(L"Hello");
+			str += L" World!";
+			ASSERT(str == L"Hello World!");
+
+			str += L"";
+			ASSERT(str == L"Hello World!");
+
+			const WString str2(L" Test");
+			str += str2;
+			ASSERT(str == L"Hello World! Test");
+
+			WString str3;
+			str3 += str;
+			ASSERT(str3 == L"Hello World! Test");
+
+			WString str4;
+			const WString str5;
+			str4 += str5;
+			ASSERT(str4.IsEmpty());
+		}
+
+		{ // +
+			WString str(L"Hello");
+			ASSERT(str + L" World!" == L"Hello World!");
+
+			ASSERT(str + L" World!" + L"" == L"Hello World!");
+
+			const WString str2(L" Test");
+			ASSERT(str + L" World!" + str2 == L"Hello World! Test");
+
+			WString str3;
+			ASSERT(str3 + str == L"Hello");
+
+			WString str4;
+			const WString str5;
+			ASSERT((str4 + str5).IsEmpty());
+		}
+	}
 }
 
 TEST_CASE("Containers/String")
 {
-	String str("Hello 123");
-
-	ASSERT(str.Size() == 9);
-	ASSERT(str[0] == 'H');
-	ASSERT(str[1] == 'e');
-	ASSERT(str[2] == 'l');
-	ASSERT(str[3] == 'l');
-	ASSERT(str[4] == 'o');
-	ASSERT(str[5] == ' ');
-	ASSERT(str[6] == '1');
-	ASSERT(str[7] == '2');
-	ASSERT(str[8] == '3');
-
 	TestString<String>();
 }
 
 TEST_CASE("Containers/WString")
 {
-	WString str(L"Hello 123");
-
-	ASSERT(str.Size() == 9);
-	ASSERT(str[0] == L'H');
-	ASSERT(str[1] == L'e');
-	ASSERT(str[2] == L'l');
-	ASSERT(str[3] == L'l');
-	ASSERT(str[4] == L'o');
-	ASSERT(str[5] == L' ');
-	ASSERT(str[6] == L'1');
-	ASSERT(str[7] == L'2');
-	ASSERT(str[8] == L'3');
-
 	TestString<WString>();
 }
 

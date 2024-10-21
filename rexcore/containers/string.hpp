@@ -287,6 +287,14 @@ namespace RexCore
 			}
 		}
 
+		StringBase<CharT, Allocator, InplaceSize>& operator+=(StringViewType rhs)
+		{
+			Reserve(Size() + rhs.Size());
+			MemCopy(rhs.Data(), Data() + Size(), rhs.Size() * sizeof(CharT));
+			SetSize(Size() + rhs.Size());
+			return *this;
+		}
+
 		constexpr operator StringViewType() const { return StringViewType(Data(), Size()); }
 
 	private:
@@ -328,6 +336,30 @@ namespace RexCore
 		using Base = VectorTypeBase<CharT, U64, StringBase<CharT, Allocator, InplaceSize>>;
 		friend class Base;
 	};
+
+	template<typename StringT, typename StringViewT>
+		requires requires () {
+			{ std::declval<StringViewT>().Data() } -> std::convertible_to<const typename StringT::CharType*>;
+			{ std::declval<StringViewT>().Size() } -> std::convertible_to<U64>;
+	}
+	inline StringT operator+(const StringT& lhs, const StringViewT& rhs)
+	{
+		StringT result = StringT();
+		result.Reserve(lhs.Size() + rhs.Size());
+		result += lhs;
+		result += rhs;
+		return result;
+	}
+
+	template<typename StringT>
+	inline StringT operator+(const StringT& lhs, const typename StringT::CharType* rhs)
+	{
+		StringT result = StringT();
+		result.Reserve(lhs.Size() + StringLength(rhs));
+		result += lhs;
+		result += rhs;
+		return result;
+	}
 
 	using String = StringBase<char, DefaultAllocator>;
 	using WString = StringBase<wchar_t, DefaultAllocator>;
