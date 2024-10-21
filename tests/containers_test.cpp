@@ -564,6 +564,18 @@ void TestVectorBase()
 	VecBaseTestPushBack<VecT>();
 	VecBaseTestInsertAt<VecT>();
 
+	{ // To and from span
+		using SpanT = VecT::SpanType;
+		using ValueT = VecT::ValueType;
+
+		VecT vec = VecT();
+		vec.Resize(16, ValueT(4));
+		SpanT span = vec;
+		VecT vec2(span);
+		ASSERT(vec2.Size() == 16);
+		ASSERT(vec.Data() != vec2.Data());
+	}
+
 	{ // Span functions
 		using ValueT = VecT::ValueType;
 		using IndexT = VecT::IndexType;
@@ -984,6 +996,7 @@ template<typename StringT>
 void TestString()
 {
 	using CharT = StringT::CharType;
+	using StringViewT = StringT::StringViewType;
 
 	{
 		StringT str = StringT();
@@ -1009,6 +1022,13 @@ void TestString()
 
 	if constexpr (std::is_same_v<CharT, char>)
 	{
+		{ // From string view
+			StringViewT view("Hello World");
+			StringT str(view);
+			ASSERT(str == "Hello World");
+			ASSERT(str == view);
+		}
+
 		{ // +=
 			StringT str("Hello");
 			str += " World!";
@@ -1050,6 +1070,13 @@ void TestString()
 	}
 	else
 	{
+		{ // From string view
+			StringViewT view(L"Hello World");
+			StringT str(view);
+			ASSERT(str == L"Hello World");
+			ASSERT(str == view);
+		}
+
 		{ // +=
 			StringT str(L"Hello");
 			str += L" World!";

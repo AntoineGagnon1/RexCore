@@ -32,6 +32,12 @@ namespace RexCore
 
 		constexpr VectorTypeBase() noexcept = default;
 
+		constexpr operator SpanType() const
+		{
+			auto self = static_cast<const ParentClass*>(this);
+			return SpanType(self->Data(), self->Size());
+		}
+
 		constexpr ~VectorTypeBase()
 		{
 			static_cast<ParentClass*>(this)->Free();
@@ -208,6 +214,9 @@ namespace RexCore
 	template<typename T, std::unsigned_integral IndexT, IAllocator Allocator>
 	class VectorBase : public VectorTypeBase<T, IndexT, VectorBase<T, IndexT, Allocator>>
 	{
+	private:
+		using BaseT = VectorTypeBase<T, IndexT, VectorBase<T, IndexT, Allocator>>;
+
 	public:
 		using AllocatorType = Allocator;
 
@@ -216,6 +225,13 @@ namespace RexCore
 		
 		constexpr VectorBase() noexcept = default;
 		
+		explicit constexpr VectorBase(BaseT::SpanType from)
+		{
+			Reserve(from.Size());
+			for (const T& item : from)
+				BaseT::PushBack(item);
+		}
+
 		[[nodiscard]] constexpr const T* Data() const { return m_data; }
 		[[nodiscard]] constexpr T* Data() { return m_data; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
@@ -299,6 +315,9 @@ namespace RexCore
 	template<typename T, std::unsigned_integral IndexT, IndexT InplaceSize, IAllocator Allocator>
 	class InplaceVectorBase : public VectorTypeBase<T, IndexT, InplaceVectorBase<T, IndexT, InplaceSize, Allocator>>
 	{
+	private:
+		using BaseT = VectorTypeBase<T, IndexT, InplaceVectorBase<T, IndexT, InplaceSize, Allocator>>;
+
 	public:
 		using AllocatorType = Allocator;
 		constexpr static IndexT InplaceCapacity = InplaceSize;
@@ -307,6 +326,13 @@ namespace RexCore
 		REX_CORE_DEFAULT_MOVE(InplaceVectorBase);
 
 		constexpr InplaceVectorBase() noexcept = default;
+
+		explicit constexpr InplaceVectorBase(BaseT::SpanType from)
+		{
+			Reserve(from.Size());
+			for (const T& item : from)
+				BaseT::PushBack(item);
+		}
 
 		[[nodiscard]] constexpr const T* Data() const { return m_data; }
 		[[nodiscard]] constexpr T* Data() { return m_data; }
@@ -411,6 +437,9 @@ namespace RexCore
 	template<typename T, std::unsigned_integral IndexT, IndexT MaxSize>
 	class FixedVectorBase : public VectorTypeBase<T, IndexT, FixedVectorBase<T, IndexT, MaxSize>>
 	{
+	private:
+		using BaseT = VectorTypeBase<T, IndexT, FixedVectorBase<T, IndexT, MaxSize>>;
+
 	public:
 		constexpr static IndexT FixedSize = MaxSize;
 
@@ -418,6 +447,13 @@ namespace RexCore
 		REX_CORE_DEFAULT_MOVE(FixedVectorBase);
 
 		constexpr FixedVectorBase() noexcept = default;
+
+		explicit constexpr FixedVectorBase(BaseT::SpanType from)
+		{
+			Reserve(from.Size());
+			for (const T& item : from)
+				BaseT::PushBack(item);
+		}
 
 		[[nodiscard]] constexpr const T* Data() const { return static_cast<const T*>(static_cast<const void*>(m_inplaceData)); }
 		[[nodiscard]] constexpr T* Data() { return static_cast<T*>(static_cast<void*>(m_inplaceData)); }

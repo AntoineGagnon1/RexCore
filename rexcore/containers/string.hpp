@@ -186,6 +186,8 @@ namespace RexCore
 		constexpr static U64 SmallStringSize = Math::Max((sizeof(U64) + sizeof(CharT*)) / sizeof(CharT), InplaceSize + 1);
 		constexpr static U64 SmallStringBitMask = (1llu << 63llu);
 
+		using BaseT = VectorTypeBase<CharT, U64, StringBase<CharT, Allocator, InplaceSize>>;
+
 	public:
 		using AllocatorType = Allocator;
 		using StringViewType = StringViewBase<CharT>;
@@ -196,12 +198,26 @@ namespace RexCore
 
 		constexpr StringBase() noexcept = default;
 
+		explicit constexpr StringBase(BaseT::SpanType from)
+		{
+			Reserve(from.Size());
+			MemCopy(from.Data(), Data(), from.Size() * sizeof(CharT));
+			SetSize(from.Size());
+		}
+
 		explicit constexpr StringBase(const CharT* nullTerminatedString)
 		{
 			const U64 length = StringLength(nullTerminatedString);
 			Reserve(length);
 			MemCopy(nullTerminatedString, Data(), length * sizeof(CharT));
 			SetSize(length); // Will add the null terminator
+		}
+
+		explicit constexpr StringBase(StringViewType from)
+		{
+			Reserve(from.Size());
+			MemCopy(from.Data(), Data(), from.Size() * sizeof(CharT));
+			SetSize(from.Size());
 		}
 
 		[[nodiscard]] constexpr const CharT* Data() const { return IsSmallString() ? m_small : m_big.m_data; }
