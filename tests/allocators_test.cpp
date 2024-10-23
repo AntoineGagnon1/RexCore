@@ -42,4 +42,25 @@ TEST_CASE("Allocators")
 {
 	TestAllocator<MallocAllocator>();
 	TestAllocator<PageAllocator>();
+	TestAllocator<ArenaAllocator>();
+
+	{ // Arena
+		ArenaAllocator arena;
+		void* ptr1 = arena.Allocate(32, 4);
+		void* ptr2 = arena.Allocate(100024, 24);
+		void* ptr3 = arena.Allocate(64, 7);
+
+		ASSERT(ptr1 != nullptr);
+		ASSERT(ptr1 < ptr2);
+		ASSERT(ptr2 < ptr3);
+		
+		arena.Reset();
+
+		void* ptr4 = arena.Allocate(32, 24);
+		void* ptr5 = arena.Allocate(100024, 4);
+		void* ptr6 = arena.Allocate(64, 7);
+		ASSERT(ptr4 == ptr1);
+		ASSERT(ptr5 == ptr2);
+		ASSERT(ptr6 == ptr3);
+	}
 }
