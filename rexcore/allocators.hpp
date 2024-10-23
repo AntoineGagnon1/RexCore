@@ -76,7 +76,7 @@ namespace RexCore
 	public:
 		using AllocatorType = T;
 
-		// alignment must be the same as the original allocation
+		// alignment must be the same as the original allocation, newSize can be smaller than oldSize
 		[[nodiscard]] void* Reallocate(this auto&& self, void* ptr, U64 oldSize, U64 newSize, U64 alignment)
 		{
 			static_assert(IAllocator<std::remove_reference_t<decltype(self)>>);
@@ -170,7 +170,7 @@ namespace RexCore
 			
 			if (ptr == m_data + m_currentSize - oldSize)
 			{ // If we are reallocating the last allocation we can just extend the current allocation
-				m_currentSize += newSize - oldSize;
+				m_currentSize += newSize - oldSize; // TODO : maybe uncommit pages when newSize < oldSize ?
 				CommitNewPages();
 				return ptr;
 			}
@@ -188,6 +188,7 @@ namespace RexCore
 
 		void Reset()
 		{
+			// TODO : maybe uncommit pages ?
 			m_currentSize = 0;
 		}
 

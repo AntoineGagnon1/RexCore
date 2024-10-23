@@ -30,4 +30,7 @@ namespace RexCore
 	// To use for references call CopyConst<T, U>& instead of CopyConst<T, U&>
 	template<typename From, typename To>
 	using CopyConst = std::conditional_t<std::is_const_v<std::remove_reference_t<From>>, std::add_const_t<To>, To>;
+
+	template<typename T>
+	concept ITrivialyMoveable = std::is_trivially_move_assignable_v<T> && std::is_trivially_move_constructible_v<T>;
 }

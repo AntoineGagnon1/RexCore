@@ -253,7 +253,6 @@ namespace RexCore
 			if (newCapacity <= m_capacity)
 				return;
 
-			// TODO perf : can we use realloc ?
 			T* newData = static_cast<T*>(m_allocator.Allocate(newCapacity * sizeof(T), alignof(T)));
 			if (m_data != nullptr)
 			{
@@ -261,6 +260,7 @@ namespace RexCore
 					newData[i] = std::move(m_data[i]);
 				m_allocator.Free(m_data, m_capacity * sizeof(T));
 			}
+
 			m_data = newData;
 			m_capacity = newCapacity;
 		}
