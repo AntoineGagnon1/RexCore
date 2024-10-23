@@ -46,10 +46,17 @@ namespace RexCore
 		[[nodiscard]] ParentClass Clone(this auto&& self)
 		{
 			static_assert(IClonable<T>, "The value type must be IClonable in order to clone a vector");
-			ParentClass clone;
+			ParentClass clone = [&] {
+				if constexpr (requires { self.GetAllocator(); })
+					return ParentClass(self.GetAllocator());
+				else
+					return ParentClass();
+			}();
+
 			clone.Reserve(self.Size());
 			for (const T& item : self)
 				clone.EmplaceBack(RexCore::Clone(item));
+			
 			return clone;
 		}
 
@@ -223,9 +230,12 @@ namespace RexCore
 		REX_CORE_NO_COPY(VectorBase);
 		REX_CORE_DEFAULT_MOVE(VectorBase);
 		
-		constexpr VectorBase() noexcept = default;
+		constexpr VectorBase(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
+			: m_allocator(allocator)
+		{}
 		
-		explicit constexpr VectorBase(BaseT::SpanType from)
+		explicit constexpr VectorBase(BaseT::SpanType from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+			: m_allocator(allocator)
 		{
 			Reserve(from.Size());
 			for (const T& item : from)
@@ -236,6 +246,7 @@ namespace RexCore
 		[[nodiscard]] constexpr T* Data() { return m_data; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
 		[[nodiscard]] constexpr IndexT Capacity() const { return m_capacity; }
+		[[nodiscard]] constexpr AllocatorRef<Allocator> GetAllocator() const { return m_allocator; }
 
 		constexpr void Reserve(IndexT newCapacity)
 		{
@@ -303,7 +314,7 @@ namespace RexCore
 		}
 
 	private:
-		Allocator m_allocator;
+		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
 		T* m_data = nullptr;
 		IndexT m_size = 0;
 		IndexT m_capacity = 0;
@@ -325,9 +336,12 @@ namespace RexCore
 		REX_CORE_NO_COPY(InplaceVectorBase);
 		REX_CORE_DEFAULT_MOVE(InplaceVectorBase);
 
-		constexpr InplaceVectorBase() noexcept = default;
+		constexpr InplaceVectorBase(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
+			: m_allocator(allocator)
+		{}
 
-		explicit constexpr InplaceVectorBase(BaseT::SpanType from)
+		explicit constexpr InplaceVectorBase(BaseT::SpanType from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+			: m_allocator(allocator)
 		{
 			Reserve(from.Size());
 			for (const T& item : from)
@@ -338,6 +352,7 @@ namespace RexCore
 		[[nodiscard]] constexpr T* Data() { return m_data; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
 		[[nodiscard]] constexpr IndexT Capacity() const { return m_capacity; }
+		[[nodiscard]] constexpr AllocatorRef<Allocator> GetAllocator() const { return m_allocator; }
 
 		constexpr void Reserve(IndexT newCapacity)
 		{
@@ -422,7 +437,7 @@ namespace RexCore
 		}
 
 	private:
-		Allocator m_allocator;
+		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
 		T* m_data = GetInplaceData();
 		IndexT m_size = 0;
 		IndexT m_capacity = InplaceSize;

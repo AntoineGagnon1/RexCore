@@ -196,16 +196,20 @@ namespace RexCore
 		REX_CORE_NO_COPY(StringBase);
 		REX_CORE_DEFAULT_MOVE(StringBase);
 
-		constexpr StringBase() noexcept = default;
+		constexpr StringBase(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
+			: m_allocator(allocator)
+		{}
 
-		explicit constexpr StringBase(BaseT::SpanType from)
+		explicit constexpr StringBase(BaseT::SpanType from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+			: m_allocator(allocator)
 		{
 			Reserve(from.Size());
 			MemCopy(from.Data(), Data(), from.Size() * sizeof(CharT));
 			SetSize(from.Size());
 		}
 
-		explicit constexpr StringBase(const CharT* nullTerminatedString)
+		explicit constexpr StringBase(const CharT* nullTerminatedString, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+			: m_allocator(allocator)
 		{
 			const U64 length = StringLength(nullTerminatedString);
 			Reserve(length);
@@ -213,7 +217,8 @@ namespace RexCore
 			SetSize(length); // Will add the null terminator
 		}
 
-		explicit constexpr StringBase(StringViewType from)
+		explicit constexpr StringBase(StringViewType from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+			: m_allocator(allocator)
 		{
 			Reserve(from.Size());
 			MemCopy(from.Data(), Data(), from.Size() * sizeof(CharT));
@@ -224,6 +229,7 @@ namespace RexCore
 		[[nodiscard]] constexpr CharT* Data() { return IsSmallString() ? m_small : m_big.m_data; }
 		[[nodiscard]] constexpr U64 Size() const { return m_size & (~SmallStringBitMask); }
 		[[nodiscard]] constexpr U64 Capacity() const { return IsSmallString() ? SmallStringSize - 1 : m_big.m_capacity; } // -1 for null terminator
+		[[nodiscard]] constexpr AllocatorRef<Allocator> GetAllocator() const { return m_allocator; }
 
 		constexpr void Reserve(U64 newCapacity)
 		{
@@ -337,7 +343,7 @@ namespace RexCore
 	private:
 		// TODO perf : we could use part of m_size to store longer small strings, but watch out for endianness
 		// The highest bit of m_size is used to determine if the string is small or not
-		Allocator m_allocator;
+		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
 		U64 m_size = SmallStringBitMask;
 		union {
 			struct {
@@ -360,7 +366,12 @@ namespace RexCore
 	}
 	inline StringT operator+(const StringT& lhs, const StringViewT& rhs)
 	{
-		StringT result = StringT();
+		StringT result = [&] {
+			if constexpr (requires { lhs.GetAllocator(); })
+				return StringT(lhs.GetAllocator());
+			else
+				return StringT();
+		}();
 		result.Reserve(lhs.Size() + rhs.Size());
 		result += lhs;
 		result += rhs;
@@ -370,15 +381,23 @@ namespace RexCore
 	template<typename StringT>
 	inline StringT operator+(const StringT& lhs, const typename StringT::CharType* rhs)
 	{
-		StringT result = StringT();
+		StringT result = [&] {
+			if constexpr (requires { lhs.GetAllocator(); })
+				return StringT(lhs.GetAllocator());
+			else
+				return StringT();
+		}();
 		result.Reserve(lhs.Size() + StringLength(rhs));
 		result += lhs;
 		result += rhs;
 		return result;
 	}
 
-	using String = StringBase<char, DefaultAllocator>;
-	using WString = StringBase<wchar_t, DefaultAllocator>;
+	template<IAllocator Allocator = DefaultAllocator>
+	using String = StringBase<char, Allocator>;
+
+	template<IAllocator Allocator = DefaultAllocator>
+	using WString = StringBase<wchar_t, Allocator>;
 
 	template<U64 InplaceSize, IAllocator Allocator = DefaultAllocator>
 	using InplaceString = StringBase<char, Allocator, InplaceSize>;

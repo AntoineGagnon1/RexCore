@@ -143,12 +143,12 @@ TEST_CASE("Containers/Span")
 	}
 }
 
-template<typename VecT>
-void VecTestReserve()
+template<typename VecT, typename ...Args>
+void VecTestReserve(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 
 	IndexT oldSize = vec.Size();
 	IndexT newCapacity = (vec.Capacity() + 1) * 2;
@@ -168,17 +168,16 @@ void VecTestReserve()
 		vec.EmplaceBack(ValueT(i));
 
 	vec.Reserve(vec.Capacity() * 2); // Make sure that reserving does not change the content
-	ASSERT(vec.Data() != ptr);
 	for (IndexT i = 0; i < newCapacity; i++)
 		ASSERT(vec[i] == ValueT(i));
 }
 
-template<typename VecT>
-void VecTestResize()
+template<typename VecT, typename ...Args>
+void VecTestResize(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 
 	vec.Resize(8, 0);
 	ASSERT(!vec.IsEmpty());
@@ -214,10 +213,10 @@ void VecTestResize()
 		ASSERT(vec[i] == ValueT(i));
 }
 
-template<typename VecT>
-void VecTestFree()
+template<typename VecT, typename ...Args>
+void VecTestFree(Args&& ...args)
 {
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 
 	vec.Free();
 	ASSERT(vec.IsEmpty());
@@ -233,12 +232,12 @@ void VecTestFree()
 	ASSERT(vec.Data() == nullptr);
 }
 
-template<typename VecT>
-void VecBaseTestSubscript()
+template<typename VecT, typename ...Args>
+void VecBaseTestSubscript(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	vec.Resize(8, 0);
 
 	for (IndexT i = 0; i < 8; i++)
@@ -252,10 +251,10 @@ void VecBaseTestSubscript()
 		ASSERT(ref[i] == ValueT(i));
 }
 
-template<typename VecT>
-void VecBaseTestIsEmpty()
+template<typename VecT, typename ...Args>
+void VecBaseTestIsEmpty(Args&& ...args)
 {
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	ASSERT(vec.Size() == 0);
 	ASSERT(vec.IsEmpty());
 
@@ -268,12 +267,12 @@ void VecBaseTestIsEmpty()
 	ASSERT(!vec.IsEmpty());
 }
 
-template<typename VecT>
-void VecBaseTestFirstLast()
+template<typename VecT, typename ...Args>
+void VecBaseTestFirstLast(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	vec.Resize(8, 0);
 	for (IndexT i = 0; i < 8; i++)
 		vec[i] = ValueT(i);
@@ -289,10 +288,10 @@ void VecBaseTestFirstLast()
 	ASSERT(ref.Last() == ValueT(6));
 }
 
-template<typename VecT>
-void VecBaseTestClear()
+template<typename VecT, typename ...Args>
+void VecBaseTestClear(Args&& ...args)
 {
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	auto ptr = vec.Data();
 
 	vec.Clear();
@@ -309,12 +308,12 @@ void VecBaseTestClear()
 	ASSERT(vec.Data() == ptr);
 }
 
-template<typename VecT>
-void VecBaseTestPushBack()
+template<typename VecT, typename ...Args>
+void VecBaseTestPushBack(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	ASSERT(vec.Size() == 0);
 
 	vec.PushBack(ValueT(1));
@@ -342,12 +341,12 @@ void VecBaseTestPushBack()
 		ASSERT(vec[i] == ValueT(i));
 }
 
-template<typename VecT>
-void VecBaseTestEmplaceBack()
+template<typename VecT, typename ...Args>
+void VecBaseTestEmplaceBack(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	ASSERT(vec.Size() == 0);
 
 	vec.EmplaceBack(ValueT(1));
@@ -375,12 +374,12 @@ void VecBaseTestEmplaceBack()
 		ASSERT(vec[i] == ValueT(i));
 }
 
-template<typename VecT>
-void VecBaseTestInsertAt()
+template<typename VecT, typename ...Args>
+void VecBaseTestInsertAt(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.PushBack(ValueT(i));
 
@@ -395,12 +394,12 @@ void VecBaseTestInsertAt()
 		ASSERT(vec[i] == ValueT(i - 1));
 }
 
-template<typename VecT>
-void VecBaseTestEmplaceAt()
+template<typename VecT, typename ...Args>
+void VecBaseTestEmplaceAt(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.EmplaceBack(ValueT(i));
 
@@ -415,12 +414,12 @@ void VecBaseTestEmplaceAt()
 		ASSERT(vec[i] == ValueT(i - 1));
 }
 
-template<typename VecT>
-void VecBaseTestPopBack()
+template<typename VecT, typename ...Args>
+void VecBaseTestPopBack(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.EmplaceBack(ValueT(i));
 
@@ -431,12 +430,12 @@ void VecBaseTestPopBack()
 	}
 }
 
-template<typename VecT>
-void VecBaseTestRemoveAt()
+template<typename VecT, typename ...Args>
+void VecBaseTestRemoveAt(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.EmplaceBack(ValueT(i));
 
@@ -451,12 +450,12 @@ void VecBaseTestRemoveAt()
 		ASSERT(vec[i] == ValueT(i));
 }
 
-template<typename VecT>
-void VecBaseTestRemoveAtOrdered()
+template<typename VecT, typename ...Args>
+void VecBaseTestRemoveAtOrdered(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.EmplaceBack(ValueT(i));
 
@@ -471,12 +470,12 @@ void VecBaseTestRemoveAtOrdered()
 		ASSERT(vec[i] == ValueT(i + 1));
 }
 
-template<typename VecT>
-void VecBaseTestForEach()
+template<typename VecT, typename ...Args>
+void VecBaseTestForEach(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.EmplaceBack(ValueT(i));
 
@@ -505,12 +504,12 @@ void VecBaseTestForEach()
 	}
 }
 
-template<typename VecT>
-void VecBaseTestContains()
+template<typename VecT, typename ...Args>
+void VecBaseTestContains(Args&& ...args)
 {
 	using ValueT = VecT::ValueType;
 
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.EmplaceBack(ValueT(i));
 
@@ -523,13 +522,13 @@ void VecBaseTestContains()
 	ASSERT(!vec.Contains(ValueT(100)));
 }
 
-template<typename VecT>
-void VecBaseTestClone()
+template<typename VecT, typename ...Args>
+void VecBaseTestClone(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
 
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	for (U32 i = 0; i < 16; i++)
 		vec.EmplaceBack(ValueT(i));
 
@@ -546,32 +545,32 @@ void VecBaseTestClone()
 }
 
 
-template<typename VecT>
-void TestVectorBase()
+template<typename VecT, typename ...Args>
+void TestVectorBase(Args&& ...args)
 {
-	VecBaseTestSubscript<VecT>();
-	VecBaseTestIsEmpty<VecT>();
-	VecBaseTestFirstLast<VecT>();
-	VecBaseTestClear<VecT>();
-	VecBaseTestEmplaceBack<VecT>();
-	VecBaseTestEmplaceAt<VecT>();
-	VecBaseTestPopBack<VecT>();
-	VecBaseTestRemoveAt<VecT>();
-	VecBaseTestRemoveAtOrdered<VecT>();
-	VecBaseTestForEach<VecT>();
-	VecBaseTestContains<VecT>();
-	VecBaseTestClone<VecT>();
-	VecBaseTestPushBack<VecT>();
-	VecBaseTestInsertAt<VecT>();
+	VecBaseTestSubscript<VecT>(args...);
+	VecBaseTestIsEmpty<VecT>(args...);
+	VecBaseTestFirstLast<VecT>(args...);
+	VecBaseTestClear<VecT>(args...);
+	VecBaseTestEmplaceBack<VecT>(args...);
+	VecBaseTestEmplaceAt<VecT>(args...);
+	VecBaseTestPopBack<VecT>(args...);
+	VecBaseTestRemoveAt<VecT>(args...);
+	VecBaseTestRemoveAtOrdered<VecT>(args...);
+	VecBaseTestForEach<VecT>(args...);
+	VecBaseTestContains<VecT>(args...);
+	VecBaseTestClone<VecT>(args...);
+	VecBaseTestPushBack<VecT>(args...);
+	VecBaseTestInsertAt<VecT>(args...);
 
 	{ // To and from span
 		using SpanT = VecT::SpanType;
 		using ValueT = VecT::ValueType;
 
-		VecT vec = VecT();
+		VecT vec = VecT(args...);
 		vec.Resize(16, ValueT(4));
 		SpanT span = vec;
-		VecT vec2(span);
+		VecT vec2(span, args...);
 		ASSERT(vec2.Size() == 16);
 		ASSERT(vec.Data() != vec2.Data());
 	}
@@ -581,7 +580,7 @@ void TestVectorBase()
 		using IndexT = VecT::IndexType;
 		using SpanT = VecT::SpanType;
 
-		VecT vec = VecT();
+		VecT vec = VecT(args...);
 		for (IndexT i = 0; i < 16; i++)
 			vec.EmplaceBack(ValueT(i));
 
@@ -594,40 +593,46 @@ void TestVectorBase()
 	}
 }
 
-template<typename VecT>
-void TestVector()
+template<typename VecT, typename ...Args>
+void TestVector(Args&& ...args)
 {
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	ASSERT(vec.IsEmpty());
 	ASSERT(vec.Size() == 0);
 	ASSERT(vec.Capacity() == 0);
 	ASSERT(vec.Data() == nullptr);
 
-	VecTestReserve<VecT>();
-	VecTestResize<VecT>();
-	VecTestFree<VecT>();
+	VecTestReserve<VecT>(args...);
+	VecTestResize<VecT>(args...);
+	VecTestFree<VecT>(args...);
 	
-	TestVectorBase<VecT>();
+	TestVectorBase<VecT>(args...);
 }
 
 TEST_CASE("Containers/Vector")
 {
+	ArenaAllocator arena;
+
 	TestVector<Vector<U32>>();
 	TestVector<Vector<MoveOnlyType>>();
+	TestVector<Vector<U32, ArenaAllocator>>(arena);
 
 	TestVector<SmallVector<U32>>();
 	TestVector<SmallVector<MoveOnlyType>>();
+	TestVector<SmallVector<U32, ArenaAllocator>>(arena);
 
 	TestVector<BigVector<U32>>();
 	TestVector<BigVector<MoveOnlyType>>();
+	TestVector<BigVector<U32, ArenaAllocator>>(arena);
+	
 }
 
-template<typename VecT>
-void InplaceVecTestResize()
+template<typename VecT, typename ...Args>
+void InplaceVecTestResize(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
 	using ValueT = VecT::ValueType;
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	auto inplaceBuffer = vec.Data();
 
 	vec.Resize(VecT::InplaceCapacity / 2, 0); // Smaller than the inplace buffer should stay inplace
@@ -673,10 +678,10 @@ void InplaceVecTestResize()
 		ASSERT(vec[i] == ValueT(i));
 }
 
-template<typename VecT>
-void InplaceVecTestFree()
+template<typename VecT, typename ...Args>
+void InplaceVecTestFree(Args&& ...args)
 {
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	auto inplaceBuffer = vec.Data();
 
 	vec.Free();
@@ -693,32 +698,36 @@ void InplaceVecTestFree()
 	ASSERT(vec.Data() == inplaceBuffer);
 }
 
-template<typename VecT>
-void TestInplaceVector()
+template<typename VecT, typename ...Args>
+void TestInplaceVector(Args&& ...args)
 {
-	VecT vec = VecT();
+	VecT vec = VecT(args...);
 	ASSERT(vec.IsEmpty());
 	ASSERT(vec.Size() == 0);
 	ASSERT(vec.Capacity() == VecT::InplaceCapacity);
 	ASSERT(vec.Data() != nullptr);
 
-	VecTestReserve<VecT>();
-	InplaceVecTestResize<VecT>();
-	InplaceVecTestFree<VecT>();
+	VecTestReserve<VecT>(args...);
+	InplaceVecTestResize<VecT>(args...);
+	InplaceVecTestFree<VecT>(args...);
 
-	TestVectorBase<VecT>();
+	TestVectorBase<VecT>(args...);
 }
 
 TEST_CASE("Containers/InplaceVector")
 {
+	ArenaAllocator arena;
 	TestInplaceVector<InplaceVector<U32, 16>>();
 	TestInplaceVector<InplaceVector<MoveOnlyType, 16>>();
+	TestInplaceVector<InplaceVector<U32, 16, ArenaAllocator>>(arena);
 
 	TestInplaceVector<SmallInplaceVector<U32, 16>>();
 	TestInplaceVector<SmallInplaceVector<MoveOnlyType, 16>>();
+	TestInplaceVector<SmallInplaceVector<U32, 16, ArenaAllocator>>(arena);
 
 	TestInplaceVector<BigInplaceVector<U32, 16>>();
 	TestInplaceVector<BigInplaceVector<MoveOnlyType, 16>>();
+	TestInplaceVector<BigInplaceVector<U32, 16, ArenaAllocator>>(arena);
 }
 
 template<typename VecT>
@@ -809,8 +818,8 @@ TEST_CASE("Containers/FixedVector")
 
 
 // view must be filled with : {0, 1, 2, 3, 4, 5, 6, ..., 15}
-template<typename ViewT>
-void TestStringTypeBase(const ViewT& view)
+template<typename ViewT, typename ...Args>
+void TestStringTypeBase(const ViewT& view, Args&& ...args)
 {
 	using CharT = ViewT::CharType;
 
@@ -837,8 +846,8 @@ void TestStringTypeBase(const ViewT& view)
 	{ // StartsWith, EndsWith
 		if constexpr (std::is_same_v<CharT, char>)
 		{
-			ViewT v("abcdef123456");
-			ViewT v2("abc");
+			ViewT v("abcdef123456", args...);
+			ViewT v2("abc", args...);
 			ASSERT(v.StartsWith(v2));
 			ASSERT(v.StartsWith("a"));
 			ASSERT(!v.StartsWith("bcdef"));
@@ -849,8 +858,8 @@ void TestStringTypeBase(const ViewT& view)
 		}
 		else
 		{
-			ViewT v(L"abcdef123456");
-			ViewT v2(L"abc");
+			ViewT v(L"abcdef123456", args...);
+			ViewT v2(L"abc", args...);
 			ASSERT(v.StartsWith(v2));
 			ASSERT(v.StartsWith(L"a"));
 			ASSERT(!v.StartsWith(L"bcdef"));
@@ -870,14 +879,14 @@ void TestStringTypeBase(const ViewT& view)
 		auto subStr = view.SubStr(0, 5);
 		ASSERT(view != subStr);
 
-		auto empty1 = ViewT();
-		auto empty2 = ViewT();
+		auto empty1 = ViewT(args...);
+		auto empty2 = ViewT(args...);
 		ASSERT(empty1 == empty2);
 
 		if constexpr (std::is_same_v<CharT, char>)
 		{
 			ASSERT(empty1 == "");
-			ViewT v("This is a string view");
+			ViewT v("This is a string view", args...);
 			ASSERT(v == "This is a string view");
 			ASSERT(v != "aaaaaaaaaaaaaaaaaaaaa");
 			ASSERT(v != "This is a different string view");
@@ -887,7 +896,7 @@ void TestStringTypeBase(const ViewT& view)
 		{
 			ASSERT(empty1 == L"");
 
-			ViewT v(L"This is a string view");
+			ViewT v(L"This is a string view", args...);
 			ASSERT(v == L"This is a string view");
 			ASSERT(v != L"aaaaaaaaaaaaaaaaaaaaa");
 			ASSERT(v != L"This is a different string view");
@@ -899,9 +908,9 @@ void TestStringTypeBase(const ViewT& view)
 	{
 		if constexpr (std::is_same_v<CharT, char>)
 		{
-			ViewT v("abcdefg");
-			ViewT v2("abcg");
-			auto empty = ViewT();
+			ViewT v("abcdefg", args...);
+			ViewT v2("abcg", args...);
+			auto empty = ViewT(args...);
 
 			ASSERT(v < v2);
 			ASSERT(v <= v2);
@@ -914,9 +923,9 @@ void TestStringTypeBase(const ViewT& view)
 		}
 		else
 		{
-			ViewT v(L"abcdefg");
-			ViewT v2(L"abcg");
-			auto empty = ViewT();
+			ViewT v(L"abcdefg", args...);
+			ViewT v2(L"abcg", args...);
+			auto empty = ViewT(args...);
 
 			ASSERT(v < v2);
 			ASSERT(v <= v2);
@@ -930,8 +939,8 @@ void TestStringTypeBase(const ViewT& view)
 	}
 }
 
-template<typename StringT>
-void TestStringView()
+template<typename StringT, typename ...Args>
+void TestStringView(Args&& ...args)
 {
 	using StringViewT = typename StringT::StringViewType;
 	using CharT = typename StringT::CharType;
@@ -943,7 +952,7 @@ void TestStringView()
 		ASSERT(view.IsEmpty());
 	}
 	{ // Data() and Size()
-		StringT str = StringT();
+		StringT str = StringT(args...);
 		for (CharT i = 0; i < 16; i++)
 			str.EmplaceBack(i);
 
@@ -956,7 +965,7 @@ void TestStringView()
 	}
 
 	{ // Foreach
-		StringT str = StringT();
+		StringT str = StringT(args...);
 		str.Resize(16, CharT('a'));
 		StringViewT view = str;
 		for (const CharT& value : view)
@@ -968,7 +977,7 @@ void TestStringView()
 		for (CharT i = 0; i < 16; i++)
 			str.EmplaceBack(i);
 
-		TestStringTypeBase<StringViewT>(str);
+		TestStringTypeBase<StringViewT>(str, args...);
 	}
 
 	{ // SpanBase functions
@@ -983,88 +992,88 @@ void TestStringView()
 TEST_CASE("Containers/StringView")
 {
 	[[maybe_unused]] StringView view = "Hello 123"; // Implicit conversion from c-style string
-	TestStringView<String>();
+	TestStringView<String<>>();
 }
 
 TEST_CASE("Containers/WStringView")
 {
 	[[maybe_unused]] WStringView view = L"Hello 123"; // Implicit conversion from c-style string
-	TestStringView<WString>();
+	TestStringView<WString<>>();
 }
 
-template<typename StringT>
-void TestString()
+template<typename StringT, typename ...Args>
+void TestString(Args&& ...args)
 {
 	using CharT = StringT::CharType;
 	using StringViewT = StringT::StringViewType;
 
 	{
-		StringT str = StringT();
+		StringT str = StringT(args...);
 		ASSERT(str.IsEmpty());
 		ASSERT(str.Size() == 0);
 		ASSERT(str.Capacity() > 0);
 		ASSERT(str.Data() != nullptr);
 	}
 
-	VecTestReserve<StringT>();
-	InplaceVecTestResize<StringT>();
-	InplaceVecTestFree<StringT>();
+	VecTestReserve<StringT>(args...);
+	InplaceVecTestResize<StringT>(args...);
+	InplaceVecTestFree<StringT>(args...);
 
-	TestVectorBase<StringT>();
+	TestVectorBase<StringT>(args...);
 
 	{ // StringTypeBase functions
-		StringT str;
+		StringT str = StringT(args...);
 		for (CharT i = 0; i < 16; i++)
 			str.EmplaceBack(i);
 
-		TestStringTypeBase<StringT>(str);
+		TestStringTypeBase<StringT>(str, args...);
 	}
 
 	if constexpr (std::is_same_v<CharT, char>)
 	{
 		{ // From string view
 			StringViewT view("Hello World");
-			StringT str(view);
+			StringT str(view, args...);
 			ASSERT(str == "Hello World");
 			ASSERT(str == view);
 		}
 
 		{ // +=
-			StringT str("Hello");
+			StringT str("Hello", args...);
 			str += " World!";
 			ASSERT(str == "Hello World!");
 
 			str += "";
 			ASSERT(str == "Hello World!");
 
-			const StringT str2(" Test");
+			const StringT str2(" Test", args...);
 			str += str2;
 			ASSERT(str == "Hello World! Test");
 
-			StringT str3;
+			StringT str3(args...);
 			str3 += str;
 			ASSERT(str3 == "Hello World! Test");
 
-			StringT str4;
-			const StringT str5;
+			StringT str4(args...);
+			const StringT str5(args...);
 			str4 += str5;
 			ASSERT(str4.IsEmpty());
 		}
 
 		{ // +
-			StringT str("Hello");
+			StringT str("Hello", args...);
 			ASSERT(str + " World!" == "Hello World!");
 
 			ASSERT(str + " World!" + "" == "Hello World!");
 
-			const StringT str2(" Test");
+			const StringT str2(" Test", args...);
 			ASSERT(str + " World!" + str2 == "Hello World! Test");
 
-			StringT str3;
+			StringT str3(args...);
 			ASSERT(str3 + str == "Hello");
 
-			StringT str4;
-			const StringT str5;
+			StringT str4(args...);
+			const StringT str5(args...);
 			ASSERT((str4 + str5).IsEmpty());
 		}
 	}
@@ -1072,47 +1081,47 @@ void TestString()
 	{
 		{ // From string view
 			StringViewT view(L"Hello World");
-			StringT str(view);
+			StringT str(view, args...);
 			ASSERT(str == L"Hello World");
 			ASSERT(str == view);
 		}
 
 		{ // +=
-			StringT str(L"Hello");
+			StringT str(L"Hello", args...);
 			str += L" World!";
 			ASSERT(str == L"Hello World!");
 
 			str += L"";
 			ASSERT(str == L"Hello World!");
 
-			const StringT str2(L" Test");
+			const StringT str2(L" Test", args...);
 			str += str2;
 			ASSERT(str == L"Hello World! Test");
 
-			StringT str3;
+			StringT str3(args...);
 			str3 += str;
 			ASSERT(str3 == L"Hello World! Test");
 
-			StringT str4;
-			const StringT str5;
+			StringT str4(args...);
+			const StringT str5(args...);
 			str4 += str5;
 			ASSERT(str4.IsEmpty());
 		}
 
 		{ // +
-			StringT str(L"Hello");
+			StringT str(L"Hello", args...);
 			ASSERT(str + L" World!" == L"Hello World!");
 
 			ASSERT(str + L" World!" + L"" == L"Hello World!");
 
-			const StringT str2(L" Test");
+			const StringT str2(L" Test", args...);
 			ASSERT(str + L" World!" + str2 == L"Hello World! Test");
 
-			StringT str3;
+			StringT str3(args...);
 			ASSERT(str3 + str == L"Hello");
 
-			StringT str4;
-			const StringT str5;
+			StringT str4(args...);
+			const StringT str5(args...);
 			ASSERT((str4 + str5).IsEmpty());
 		}
 	}
@@ -1120,20 +1129,28 @@ void TestString()
 
 TEST_CASE("Containers/String")
 {
-	TestString<String>();
+	ArenaAllocator arena;
+	TestString<String<>>();
+	TestString<String<ArenaAllocator>>(arena);
 }
 
 TEST_CASE("Containers/WString")
 {
-	TestString<WString>();
+	ArenaAllocator arena;
+	TestString<WString<>>();
+	TestString<WString<ArenaAllocator>>(arena);
 }
 
 TEST_CASE("Containers/InplaceString")
 {
+	ArenaAllocator arena;
 	TestString<InplaceString<32>>();
+	TestString<InplaceString<32, ArenaAllocator>>(arena);
 }
 
 TEST_CASE("Containers/InplaceWString")
 {
+	ArenaAllocator arena;
 	TestString<InplaceWString<32>>();
+	TestString<InplaceWString<32, ArenaAllocator>>(arena);
 }

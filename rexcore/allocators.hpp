@@ -60,6 +60,16 @@ namespace RexCore
 		{ std::declval<T>().Free(nullptr, U64{}) } -> std::convertible_to<void>;
 	};
 
+	template<IAllocator Allocator>
+	using AllocatorRef = std::conditional_t<std::is_empty_v<Allocator>, Allocator, std::add_lvalue_reference_t<Allocator>>;
+
+	template<IAllocator Allocator>
+	inline consteval AllocatorRef<Allocator> AllocatorRefDefaultArg()
+	{
+		static_assert(std::is_empty_v<Allocator>, "You must pass an allocator reference if the allocator is not stateless");
+		return Allocator{};
+	};
+
 	template<typename T>
 	class AllocatorBase
 	{
