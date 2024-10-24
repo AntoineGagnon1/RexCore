@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <concepts>
 #include <bit>
+#include <source_location>
 
 namespace RexCore
 {
@@ -46,11 +47,40 @@ namespace RexCore
 		return aligned - intAddr;
 	}
 
+#ifdef REX_CORE_TRACK_ALLOCS
+	using AllocSourceLocation = std::source_location;
+
+	void TrackAlloc(void* ptr, U64 size, AllocSourceLocation loc);
+	void TrackFree(void* ptr, U64 size, AllocSourceLocation loc);
+	// Will call REX_CORE_LEAK for each leaked allocation
+	// returns true if any leaks were detected
+	bool CheckForLeaks();
+#else
+	struct AllocSourceLocation
+	{
+		static AllocSourceLocation current() noexcept { return {}; }
+	};
+
+	inline void TrackAlloc([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc) {}
+	inline void TrackFree([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc) {}
+	inline bool CheckForLeaks() { return false; }
+#endif
+
 	extern const U64 PageSize;
 	void* ReservePages(U64 numPages);
 	void ReleasePages(void* address, U64 numPages);
-	void CommitPages(void* address, U64 numPages);
-	void DecommitPages(void* address, U64 numPages);
+	void CommitPagesUntracked(void* address, U64 numPages);
+	inline void CommitPages(void* address, U64 numPages, AllocSourceLocation loc = AllocSourceLocation::current())
+	{
+		CommitPagesUntracked(address, numPages);
+		TrackAlloc(address, numPages * PageSize, loc);
+	}
+	void DecommitPagesUntracked(void* address, U64 numPages);
+	inline void DecommitPages(void* address, U64 numPages, AllocSourceLocation loc = AllocSourceLocation::current())
+	{
+		DecommitPagesUntracked(address, numPages);
+		TrackFree(address, numPages * PageSize, loc);
+	}
 
 	template<typename T>
 	concept IAllocator = std::movable<T> && requires()
@@ -77,13 +107,13 @@ namespace RexCore
 		using AllocatorType = T;
 
 		// alignment must be the same as the original allocation, newSize can be smaller than oldSize
-		[[nodiscard]] void* Reallocate(this auto&& self, void* ptr, U64 oldSize, U64 newSize, U64 alignment)
+		[[nodiscard]] void* Reallocate(this auto&& self, void* ptr, U64 oldSize, U64 newSize, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			static_assert(IAllocator<std::remove_reference_t<decltype(self)>>);
 			REX_CORE_ASSERT(ptr != nullptr);
-			void* newPtr = self.Allocate(newSize, alignment);
+			void* newPtr = self.Allocate(newSize, alignment, loc);
 			MemMove(ptr, newPtr, oldSize);
-			self.Free(ptr, oldSize);
+			self.Free(ptr, oldSize, loc);
 			return newPtr;
 		}
 	};
@@ -92,19 +122,25 @@ namespace RexCore
 	class MallocAllocator : public AllocatorBase<MallocAllocator>
 	{
 	public:
-		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
+		[[nodiscard]] void* Allocate(U64 size, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
-			return _aligned_malloc(size, alignment);
+			void* ptr = _aligned_malloc(size, alignment);
+			TrackAlloc(ptr, size, loc);
+			return ptr;
 		}
 
-		[[nodiscard]]void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment)
+		[[nodiscard]]void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			REX_CORE_ASSERT(ptr != nullptr);
-			return _aligned_realloc(ptr, newSize, alignment);
+			TrackFree(ptr, oldSize, loc);
+			void* newPtr = _aligned_realloc(ptr, newSize, alignment);
+			TrackAlloc(newPtr, newSize, loc);
+			return newPtr;
 		}
 
-		void Free(void* ptr, [[maybe_unused]] U64 size)
+		void Free(void* ptr, [[maybe_unused]] U64 size, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			TrackFree(ptr, size, loc);
 			_aligned_free(ptr);
 		}
 	};
@@ -114,20 +150,22 @@ namespace RexCore
 	class PageAllocator : public AllocatorBase<PageAllocator>
 	{
 	public:
-		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
+		[[nodiscard]] void* Allocate(U64 size, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			REX_CORE_ASSERT(alignment <= PageSize);
 			const U64 numPages = Math::CeilDiv(size, PageSize);
 			void* pages = ReservePages(numPages);
-			CommitPages(pages, numPages);
+			CommitPagesUntracked(pages, numPages);
+			TrackAlloc(pages, size, loc);
 			return pages;
 		}
 
-		void Free(void* ptr, [[maybe_unused]] U64 size)
+		void Free(void* ptr, [[maybe_unused]] U64 size, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			const U64 numPages = Math::CeilDiv(size, PageSize);
-			DecommitPages(ptr, numPages);
+			DecommitPagesUntracked(ptr, numPages);
 			ReleasePages(ptr, numPages);
+			TrackFree(ptr, size, loc);
 		}
 	};
 	static_assert(IAllocator<PageAllocator>);
@@ -145,7 +183,7 @@ namespace RexCore
 
 		~ArenaAllocator()
 		{
-			DecommitPages(m_data, Math::CeilDiv(m_commitedSize, PageSize));
+			DecommitPagesUntracked(m_data, Math::CeilDiv(m_commitedSize, PageSize));
 			ReleasePages(m_data, Math::CeilDiv(m_maxSize, PageSize));
 			m_data = nullptr;
 			m_maxSize = 0;
@@ -153,7 +191,7 @@ namespace RexCore
 			m_commitedSize = 0;
 		}
 
-		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
+		[[nodiscard]] void* Allocate(U64 size, U64 alignment, [[maybe_unused]] AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			const U64 offset = AlignedOffset(m_data + m_currentSize, alignment);
 			const U64 startIndex = m_currentSize + offset;
@@ -164,7 +202,7 @@ namespace RexCore
 			return m_data + startIndex;
 		}
 
-		[[nodiscard]] void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment)
+		[[nodiscard]] void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment, [[maybe_unused]] AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			REX_CORE_ASSERT(ptr != nullptr && ptr <= m_data + m_currentSize);
 			
@@ -182,7 +220,7 @@ namespace RexCore
 			}
 		}
 
-		void Free([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size)
+		void Free([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 		}
 
@@ -199,7 +237,7 @@ namespace RexCore
 			{
 				REX_CORE_ASSERT(m_currentSize < m_maxSize);
 				const U64 numPages = Math::CeilDiv(m_currentSize - m_commitedSize, PageSize);
-				CommitPages(m_data + m_commitedSize, numPages);
+				CommitPagesUntracked(m_data + m_commitedSize, numPages);
 				m_commitedSize += numPages * PageSize;
 			}
 		}
@@ -211,6 +249,62 @@ namespace RexCore
 		U64 m_commitedSize;
 	};
 	static_assert(IAllocator<ArenaAllocator>);
+
+	template<typename T, IAllocator Allocator>
+	class StdAllocatorAdaptor
+	{
+	public:
+		using value_type = T;
+
+		StdAllocatorAdaptor(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
+			: m_allocator(allocator)
+		{}
+
+		template<typename U>
+		StdAllocatorAdaptor(const StdAllocatorAdaptor<U, Allocator>& other) noexcept
+			: m_allocator(other.GetAllocator())
+		{}
+
+		[[nodiscard]] constexpr T* allocate(std::size_t num)
+		{
+			return reinterpret_cast<T*>(m_allocator.Allocate(static_cast<U64>(num) * sizeof(T), alignof(T)));
+		}
+
+		constexpr void deallocate(T* ptr, std::size_t num) noexcept
+		{
+			m_allocator.Free(ptr, static_cast<U64>(num) * sizeof(T));
+		}
+
+		std::size_t MaxAllocationSize() const noexcept
+		{
+			return Math::MaxValue<U64>();
+		}
+
+		bool operator==(const StdAllocatorAdaptor<T, Allocator>& rhs) const noexcept
+		{
+			if constexpr (std::is_empty_v<Allocator>)
+			{
+				return true;
+			}
+			else
+			{
+				return &m_allocator == &rhs.m_allocator;
+			}
+		}
+
+		bool operator!=(const StdAllocatorAdaptor<T, Allocator>& rhs) const noexcept
+		{
+			return !(*this == rhs);
+		}
+
+		AllocatorRef<Allocator> GetAllocator() const noexcept
+		{
+			return m_allocator;
+		}
+
+	private:
+		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
+	};
 
 	using DefaultAllocator = MallocAllocator;
 }

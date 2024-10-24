@@ -5,6 +5,8 @@
 #include <rexcore/concepts.hpp>
 #include <rexcore/containers/span.hpp>
 
+#include <iterator>
+
 namespace RexCore
 {
 	// ParentClass must provide :

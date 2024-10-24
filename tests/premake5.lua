@@ -9,7 +9,7 @@ project "RexCoreTests"
     objdir ("%{prj.location}/obj/")
     
     includedirs "../"
-    
+
     links "RexCore"
     
     files {

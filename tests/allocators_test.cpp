@@ -64,3 +64,27 @@ TEST_CASE("Allocators")
 		ASSERT(ptr6 == ptr3);
 	}
 }
+
+TEST_CASE("Allocators/STD_Adapter")
+{
+	{ // stateful
+		ArenaAllocator arena;
+		std::vector<U32, StdAllocatorAdaptor<U32, ArenaAllocator>> vec(arena);
+
+		for (U32 i = 0; i < 100; ++i)
+			vec.push_back(i);
+
+		for (U32 i = 0; i < 100; ++i)
+			ASSERT(vec[i] == i);
+	}
+
+	{ // stateless
+		std::vector<U32, StdAllocatorAdaptor<U32, MallocAllocator>> vec;
+
+		for (U32 i = 0; i < 100; ++i)
+			vec.push_back(i);
+
+		for (U32 i = 0; i < 100; ++i)
+			ASSERT(vec[i] == i);
+	}
+}

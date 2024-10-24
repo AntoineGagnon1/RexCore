@@ -1,6 +1,8 @@
 #include <rexcore/allocators.hpp>
 #include <rexcore/system_headers.hpp>
 
+#include <unordered_map>
+
 namespace RexCore
 {
 #ifdef REX_CORE_WIN32
@@ -27,7 +29,7 @@ namespace RexCore
 		REX_CORE_ASSERT(VirtualFree(address, 0u, MEM_RELEASE));
 	}
 
-	void CommitPages(void* address, U64 numPages)
+	void CommitPagesUntracked(void* address, U64 numPages)
 	{
 #if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 		void* newPtr = VirtualAlloc(address, numPages * PageSize, MEM_COMMIT, PAGE_READWRITE);
@@ -37,7 +39,7 @@ namespace RexCore
 		REX_CORE_ASSERT(newPtr != nullptr && address == newPtr);
 	}
 
-	void DecommitPages(void* address, U64 numPages)
+	void DecommitPagesUntracked(void* address, U64 numPages)
 	{
 		REX_CORE_ASSERT(VirtualFree(address, numPages * PageSize, MEM_DECOMMIT));
 	}
@@ -48,4 +50,72 @@ namespace RexCore
 #endif
 
 	const U64 PageSize = GetPageSize();
+
+#ifdef REX_CORE_TRACK_ALLOCS
+	class NonTrackingMallocAllocator : public AllocatorBase<NonTrackingMallocAllocator>
+	{
+	public:
+		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
+		{
+			return _aligned_malloc(size, alignment);
+		}
+
+		[[nodiscard]] void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment)
+		{
+			REX_CORE_ASSERT(ptr != nullptr);
+			return _aligned_realloc(ptr, newSize, alignment);
+		}
+
+		void Free(void* ptr, [[maybe_unused]] U64 size)
+		{
+			_aligned_free(ptr);
+		}
+	};
+	static_assert(IAllocator<NonTrackingMallocAllocator>);
+
+	struct Alloc
+	{
+		U64 size;
+		AllocSourceLocation loc;
+	};
+
+	static std::unordered_map<void*, Alloc, std::hash<void*>, std::equal_to<void*>, StdAllocatorAdaptor<std::pair<void* const, Alloc>, NonTrackingMallocAllocator>> s_aliveAlloc;
+
+	void TrackAlloc(void* ptr, U64 size, AllocSourceLocation loc)
+	{
+		auto result = s_aliveAlloc.emplace(ptr, Alloc{ size, loc });
+		if (result.second == false)
+		{
+			REX_CORE_ALLOC_NO_FREE(ptr, result.first->second.size, result.first->second.loc, size, loc);
+		}
+	}
+
+	void TrackFree(void* ptr, U64 size, [[maybe_unused]]AllocSourceLocation loc)
+	{
+		auto found = s_aliveAlloc.find(ptr);
+		if (found == s_aliveAlloc.end())
+		{
+			REX_CORE_FREE_NO_ALLOC(ptr, size, loc);
+			return;
+		}
+		else
+		{
+			if (found->second.size != size)
+			{
+				REX_CORE_ASYMMETRIC_FREE(ptr, size, loc, found->second.size, found->second.loc);
+			}
+			s_aliveAlloc.erase(ptr);
+		}
+	}
+
+	bool CheckForLeaks()
+	{
+		for (auto&[ptr, alloc] : s_aliveAlloc)
+		{
+			REX_CORE_LEAK(ptr, alloc.size, alloc.loc);
+		}
+
+		return !s_aliveAlloc.empty();
+	}
+#endif
 }

@@ -4,6 +4,7 @@
 #include <rexcore/concepts.hpp>
 
 #include <concepts>
+#include <iterator>
 
 namespace RexCore
 {

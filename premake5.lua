@@ -10,6 +10,8 @@ workspace "RexCore"
 	buildoptions "/fsanitize=address"
 	editandcontinue "off"
 
+	defines {"REX_CORE_TRACK_ALLOCS"}
+
     filter "configurations:Debug"
         symbols "On"
     
