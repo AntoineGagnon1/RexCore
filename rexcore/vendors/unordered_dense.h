@@ -1173,7 +1173,7 @@ private:
     }
 
 public:
-    constexpr explicit table(size_t bucket_count,
+    explicit table(size_t bucket_count,
                    Hash const& hash = Hash(),
                    KeyEqual const& equal = KeyEqual(),
                    allocator_type const& alloc_or_container = allocator_type())
@@ -1198,7 +1198,11 @@ public:
         : table(bucket_count, hash, KeyEqual(), alloc) {}
 
     constexpr explicit table(allocator_type const& alloc)
-        : table(0, Hash(), KeyEqual(), alloc) {}
+        : m_values(alloc)
+        , m_hash(Hash())
+        , m_equal(KeyEqual())
+    {
+    }
 
     template <class InputIt>
     table(InputIt first,
