@@ -21,6 +21,12 @@ namespace RexCore
 			return obj.Clone();
 	}
 
+	template<IClonable T>
+	inline void CloneInto(const T& obj, T* into)
+	{
+		new (into) T(std::move(RexCore::Clone<T>(obj)));
+	}
+
 	template<typename PredT, typename ...Args>
 	concept IPredicate = requires(const PredT p, Args ...args)
 	{

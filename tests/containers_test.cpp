@@ -4,6 +4,7 @@
 #include <rexcore/containers/string.hpp>
 #include <rexcore/containers/map.hpp>
 #include <rexcore/containers/set.hpp>
+#include <rexcore/containers/smart_ptrs.hpp>
 #include <rexcore/math.hpp>
 
 using namespace RexCore;
@@ -1234,4 +1235,66 @@ TEST_CASE("Containers/HashSet")
 	ASSERT(set.IsEmpty());
 
 	ASSERT(typeid(set.GetAllocator()) == typeid(DefaultAllocator));
+}
+
+TEST_CASE("Containers/UniquePtr")
+{
+	{
+		UniquePtr<String<>> ptr;
+		ASSERT(!ptr);
+		ASSERT(ptr.IsEmpty());
+		ASSERT(ptr.Get() == nullptr);
+
+		auto ptr2 = ptr.Clone();
+		ASSERT(!ptr2);
+		ASSERT(ptr2.IsEmpty());
+		ASSERT(ptr2.Get() == nullptr);
+
+		String<>* newStr = (String<>*)DefaultAllocator{}.Allocate(sizeof(String<>), alignof(String<>));
+		ptr2.Assign(newStr);
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2.Get() == newStr);
+	}
+
+	{
+		UniquePtr<String<>> ptr = MakeUnique<String<>>("Hello");
+		ASSERT(ptr);
+		ASSERT(!ptr.IsEmpty());
+		ASSERT(ptr->Size() == 5);
+		ASSERT(*ptr == "Hello");
+
+		const UniquePtr<String<>> ptr2 = std::move(ptr);
+		ASSERT(!ptr);
+		ASSERT(ptr.IsEmpty());
+		ASSERT(ptr.Get() == nullptr);
+		ASSERT(ptr2.Get() != nullptr);
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2->Size() == 5);
+		ASSERT(*ptr2 == "Hello");
+	}
+
+	{
+		UniquePtr<U32> ptr((U32*)DefaultAllocator{}.Allocate(sizeof(U32), alignof(U32)));
+		ASSERT(ptr);
+		ASSERT(ptr.Get() != nullptr);
+
+		ptr.Free();
+		ASSERT(!ptr);
+		ASSERT(ptr.Get() == nullptr);
+	}
+
+	{
+		ArenaAllocator alloc;
+		auto ptr = AllocateUnique<String<>, ArenaAllocator>(alloc, "Hello");
+		ASSERT(&ptr.GetAllocator() == &alloc);
+		ASSERT(*ptr == "Hello");
+
+		auto ptr2 = ptr.Clone();
+		ASSERT(&ptr2.GetAllocator() == &alloc);
+		ASSERT(*ptr2 == "Hello");
+		ASSERT(ptr.Get() != ptr2.Get());
+		ASSERT(*ptr == *ptr);
+	}
 }
