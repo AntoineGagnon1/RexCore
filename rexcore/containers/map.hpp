@@ -1,7 +1,6 @@
 #pragma once
 #include <rexcore/core.hpp>
 #include <rexcore/allocators.hpp>
-#include <rexcore/containers/vector.hpp>
 
 #pragma warning(push, 0)
 #include <rexcore/vendors/bytell_hash_map.hpp>

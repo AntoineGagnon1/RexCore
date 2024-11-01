@@ -3,6 +3,7 @@
 #include <rexcore/containers/vector.hpp>
 #include <rexcore/containers/string.hpp>
 #include <rexcore/containers/map.hpp>
+#include <rexcore/containers/set.hpp>
 #include <rexcore/math.hpp>
 
 using namespace RexCore;
@@ -1200,4 +1201,37 @@ TEST_CASE("Containers/HashMap")
 	ASSERT(map.IsEmpty());
 
 	ASSERT(typeid(map.GetAllocator()) == typeid(DefaultAllocator));
+}
+
+TEST_CASE("Containers/HashSet")
+{
+	HashSet<U32> set = HashSet<U32>();
+	set.Insert(1);
+	set.Insert(2);
+	set.Reserve(300);
+
+	ASSERT(set.Size() == 2);
+	ASSERT(!set.IsEmpty());
+
+	HashSet<U32> set2 = set.Clone();
+	ASSERT(set == set2);
+
+	set.Erase(1);
+
+	ASSERT(!set.Contains(1));
+	ASSERT(set2.Contains(1));
+
+	ASSERT(set.Contains(2));
+	ASSERT(!set.Contains(100));
+
+	for (auto& k : set)
+	{
+		ASSERT(k > 0);
+	}
+
+	set.Clear();
+	ASSERT(set.Size() == 0);
+	ASSERT(set.IsEmpty());
+
+	ASSERT(typeid(set.GetAllocator()) == typeid(DefaultAllocator));
 }
