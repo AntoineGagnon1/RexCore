@@ -2,6 +2,7 @@
 
 #include <rexcore/containers/vector.hpp>
 #include <rexcore/containers/string.hpp>
+#include <rexcore/containers/map.hpp>
 #include <rexcore/math.hpp>
 
 using namespace RexCore;
@@ -1153,4 +1154,50 @@ TEST_CASE("Containers/InplaceWString")
 	ArenaAllocator arena;
 	TestString<InplaceWString<32>>();
 	TestString<InplaceWString<32, ArenaAllocator>>(arena);
+}
+
+TEST_CASE("Containers/HashMap")
+{
+	HashMap<U32, U32> map = HashMap<U32, U32>();
+	map.Insert(1, 2);
+	map.Insert(2, 4);
+	map.Reserve(300);
+
+	ASSERT(map.Size() == 2);
+	ASSERT(!map.IsEmpty());
+
+	ASSERT(map.Find(1) == map.Begin());
+	ASSERT(map.Find(2) != map.Begin());
+
+	HashMap<U32, U32> map2 = map.Clone();
+	ASSERT(map == map2);
+
+	ASSERT(map2[1] == 2);
+	ASSERT(map2[2] == 4);
+
+	map.InsertOrAssign(3, 6);
+	map.InsertOrAssign(2, 5);
+
+	ASSERT(map.At(3) == 6);
+	ASSERT(map.At(2) == 5);
+
+	map.Erase(1);
+
+	ASSERT(!map.Contains(1));
+	ASSERT(map2.Contains(1));
+
+	ASSERT(map.Contains(2));
+	ASSERT(map.Contains(3));
+	ASSERT(!map.Contains(100));
+
+	for (auto&[k, v] : map)
+	{
+		ASSERT(k < v);
+	}
+
+	map.Clear();
+	ASSERT(map.Size() == 0);
+	ASSERT(map.IsEmpty());
+
+	ASSERT(typeid(map.GetAllocator()) == typeid(DefaultAllocator));
 }

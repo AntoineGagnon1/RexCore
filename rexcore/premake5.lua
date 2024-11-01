@@ -12,6 +12,9 @@ project "RexCore"
         "%{prj.location}/**.natvis" 
     }
 	
+	externalincludedirs { "%{prj.location}/vendors/**" }
+	externalwarnings "Off"
+	
 	filter "files:**.natvis"
 		buildaction "Natvis"
 	filter {}

@@ -2,7 +2,7 @@
 
 #ifndef REX_CORE_ASSERT
 #include <cassert>
-#define REX_CORE_ASSERT(...) assert(__VA_ARGS__)
+#define REX_CORE_ASSERT(cond, ...) assert(cond)
 #endif // !REX_CORE_ASSERT
 
 // Called when a Free() is called on an address that was not Alloc()ed
