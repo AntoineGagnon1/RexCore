@@ -1,8 +1,10 @@
 #pragma once
 #include <rexcore/core.hpp>
 #include <rexcore/allocators.hpp>
+#include <rexcore/concepts.hpp>
 
 #pragma warning(push, 0)
+#include <stdexcept>
 #include <rexcore/vendors/bytell_hash_map.hpp>
 #pragma warning(pop)
 

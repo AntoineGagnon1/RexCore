@@ -1,8 +1,8 @@
 #include <rexcore/allocators.hpp>
 #include <rexcore/system_headers.hpp>
 
-#include <unordered_map>
-#include <memory>
+#include <rexcore/containers/map.hpp>
+#include <rexcore/containers/smart_ptrs.hpp>
 
 namespace RexCore
 {
@@ -80,15 +80,15 @@ namespace RexCore
 		AllocSourceLocation loc;
 	};
 
-	static std::unique_ptr<std::unordered_map<void*, Alloc, std::hash<void*>, std::equal_to<void*>, StdAllocatorAdaptor<std::pair<void* const, Alloc>, NonTrackingMallocAllocator>>> s_aliveAlloc;
+	// TODO : should use a faster free-list allocator
+	static UniquePtr<HashMap<void*, Alloc, NonTrackingMallocAllocator>, NonTrackingMallocAllocator> s_aliveAlloc;
 
 	void TrackAlloc(void* ptr, U64 size, AllocSourceLocation loc)
 	{
 		if (!s_aliveAlloc)
 			return;
 
-		auto result = s_aliveAlloc->emplace(ptr, Alloc{ size, loc });
-		if (result.second == false)
+		if (s_aliveAlloc->Insert(ptr, Alloc{ size, loc }) == false)
 		{
 			REX_CORE_ALLOC_NO_FREE(ptr, result.first->second.size, result.first->second.loc, size, loc);
 		}
@@ -99,7 +99,7 @@ namespace RexCore
 		if (!s_aliveAlloc)
 			return;
 
-		auto found = s_aliveAlloc->find(ptr);
+		auto found = s_aliveAlloc->Find(ptr);
 		if (found == s_aliveAlloc->end())
 		{
 			REX_CORE_FREE_NO_ALLOC(ptr, size, loc);
@@ -111,13 +111,13 @@ namespace RexCore
 			{
 				REX_CORE_ASYMMETRIC_FREE(ptr, size, loc, found->second.size, found->second.loc);
 			}
-			s_aliveAlloc->erase(ptr);
+			s_aliveAlloc->Erase(ptr);
 		}
 	}
 
 	void StartTrackingMemory()
 	{
-		s_aliveAlloc = std::make_unique<decltype(s_aliveAlloc)::element_type>();
+		s_aliveAlloc = AllocateUnique<decltype(s_aliveAlloc)::ValueType, NonTrackingMallocAllocator>(NonTrackingMallocAllocator{});
 	}
 
 	bool CheckForLeaks()
@@ -129,8 +129,8 @@ namespace RexCore
 			REX_CORE_LEAK(ptr, alloc.size, alloc.loc);
 		}
 
-		const bool leaks = !s_aliveAlloc->empty();
-		s_aliveAlloc.reset();
+		const bool leaks = !s_aliveAlloc->IsEmpty();
+		s_aliveAlloc.Free();
 
 		return leaks;
 	}
