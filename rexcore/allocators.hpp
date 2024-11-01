@@ -52,6 +52,8 @@ namespace RexCore
 
 	void TrackAlloc(void* ptr, U64 size, AllocSourceLocation loc);
 	void TrackFree(void* ptr, U64 size, AllocSourceLocation loc);
+	
+	void StartTrackingMemory();
 	// Will call REX_CORE_LEAK for each leaked allocation
 	// returns true if any leaks were detected
 	bool CheckForLeaks();
@@ -63,6 +65,7 @@ namespace RexCore
 
 	inline void TrackAlloc([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc) {}
 	inline void TrackFree([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc) {}
+	void StartTrackingMemory() {}
 	inline bool CheckForLeaks() { return false; }
 #endif
 

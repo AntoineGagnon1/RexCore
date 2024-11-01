@@ -4,6 +4,7 @@
 
 int main()
 {
+	RexCore::StartTrackingMemory();
 	bool success = RexCore::Tests::RegisterTestCase::RunAllTests();
 	success &= !RexCore::CheckForLeaks();
 	return success ? 0 : -1;
