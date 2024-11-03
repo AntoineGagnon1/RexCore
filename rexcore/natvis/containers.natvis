@@ -98,4 +98,26 @@
   <Type Name="RexCore::AllocatorBase&lt;*&gt;">
     <DisplayString>{"$T1"}</DisplayString>
   </Type>
+
+  <Type Name="RexCore::WeakPtr&lt;*&gt;">
+    <DisplayString Condition="m_ptr == nullptr || m_controlBlock->refCount == 0">Empty</DisplayString>
+    <DisplayString Condition="m_ptr != nullptr &amp;&amp; m_controlBlock->refCount > 0">{{Ptr={m_ptr} Refs={m_controlBlock->refCount} WeakRefs={m_controlBlock->refCount >= 1 ? m_controlBlock->weakRefCount - 1 : m_controlBlock->weakRefCount}}</DisplayString>
+
+    <Expand>
+      <Item Name="Refs" Condition="m_ptr != nullptr &amp;&amp; m_controlBlock->refCount > 0" ExcludeView="simple">m_controlBlock->refCount</Item>
+      <Item Name="WeakRefs" Condition="m_ptr != nullptr &amp;&amp; m_controlBlock->refCount > 0" ExcludeView="simple">m_controlBlock->refCount >= 1 ? m_controlBlock->weakRefCount - 1 : m_controlBlock->weakRefCount</Item>
+      <Item Name="Ptr" ExcludeView="simple">m_ptr</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="RexCore::SharedPtr&lt;*&gt;">
+    <DisplayString Condition="m_ptr == nullptr || m_controlBlock->refCount == 0">Empty</DisplayString>
+    <DisplayString Condition="m_ptr != nullptr &amp;&amp; m_controlBlock->refCount > 0">{{Ptr={m_ptr} Refs={m_controlBlock->refCount} WeakRefs={m_controlBlock->refCount >= 1 ? m_controlBlock->weakRefCount - 1 : m_controlBlock->weakRefCount}}</DisplayString>
+
+    <Expand>
+      <Item Name="Refs" Condition="m_ptr != nullptr &amp;&amp; m_controlBlock->refCount > 0" ExcludeView="simple">m_controlBlock->refCount</Item>
+      <Item Name="WeakRefs" Condition="m_ptr != nullptr &amp;&amp; m_controlBlock->refCount > 0" ExcludeView="simple">m_controlBlock->refCount >= 1 ? m_controlBlock->weakRefCount - 1 : m_controlBlock->weakRefCount</Item>
+      <Item Name="Ptr" ExcludeView="simple">m_ptr</Item>
+    </Expand>
+  </Type>
 </AutoVisualizer>
