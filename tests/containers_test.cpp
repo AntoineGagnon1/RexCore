@@ -1340,6 +1340,14 @@ TEST_CASE("Containers/SharedPtr")
 		ASSERT(ptr.NumWeakRefs() == 1);
 		ASSERT(weakPtr.Lock().Get() == str);
 
+		{
+			WeakPtr<String<>> weakPtr2 = weakPtr;
+			ASSERT(weakPtr2);
+			ASSERT(!weakPtr2.IsEmpty());
+			ASSERT(ptr.NumWeakRefs() == 2);
+			ASSERT(weakPtr2.Lock().Get() == str);
+		}
+
 		SharedPtr<String<>> ptr2 = ptr;
 		ASSERT(ptr2);
 		ASSERT(!ptr2.IsEmpty());

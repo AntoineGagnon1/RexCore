@@ -142,9 +142,9 @@ namespace RexCore
 			, m_controlBlock(nullptr)
 		{}
 
-		WeakPtr(const SharedPtr<T>& sharedPtr)
-			: m_ptr(sharedPtr.m_ptr)
-			, m_controlBlock(sharedPtr.m_controlBlock)
+		WeakPtr(const WeakPtr<T>& other)
+			: m_ptr(other.m_ptr)
+			, m_controlBlock(other.m_controlBlock)
 		{
 			if (m_controlBlock)
 				m_controlBlock->weakRefCount += 1;
