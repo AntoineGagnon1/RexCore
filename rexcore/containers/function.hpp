@@ -1,3 +1,4 @@
+#pragma once
 #include <rexcore/core.hpp>
 #include <rexcore/allocators.hpp>
 

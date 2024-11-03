@@ -1300,6 +1300,122 @@ TEST_CASE("Containers/UniquePtr")
 	}
 }
 
+TEST_CASE("Containers/SharedPtr")
+{
+	{
+		WeakPtr<String<>> weakPtr;
+		ASSERT(!weakPtr);
+		ASSERT(weakPtr.IsEmpty());
+	}
+
+	{
+		SharedPtr<String<>> ptr;
+		ASSERT(!ptr);
+		ASSERT(ptr.IsEmpty());
+		ASSERT(ptr.Get() == nullptr);
+		ASSERT(ptr.NumRefs() == 0);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		WeakPtr<String<>> weakPtr = ptr.GetWeak();
+		ASSERT(!weakPtr);
+		ASSERT(weakPtr.IsEmpty());
+	}
+
+	WeakPtr<String<>> weakPtr;
+	ASSERT(!weakPtr);
+	ASSERT(weakPtr.IsEmpty());
+
+	{
+		String<>* str = new String("hello");
+		SharedPtr<String<>> ptr = MakeSharedFromPtr<String<>, DefaultAllocator>(str);
+		ASSERT(ptr);
+		ASSERT(!ptr.IsEmpty());
+		ASSERT(ptr.Get() == str);
+		ASSERT(ptr.NumRefs() == 1);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		weakPtr = ptr.GetWeak();
+		ASSERT(weakPtr);
+		ASSERT(!weakPtr.IsEmpty());
+		ASSERT(ptr.NumWeakRefs() == 1);
+		ASSERT(weakPtr.Lock().Get() == str);
+
+		SharedPtr<String<>> ptr2 = ptr;
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2.Get() == str);
+		ASSERT(ptr2.NumRefs() == 2);
+		ASSERT(ptr2.NumWeakRefs() == 1);
+
+		SharedPtr<String<>> ptr3 = ptr2;
+		ASSERT(ptr3);
+		ASSERT(!ptr3.IsEmpty());
+		ASSERT(ptr3.Get() == str);
+		ASSERT(ptr3.NumRefs() == 3);
+		ASSERT(ptr3.NumWeakRefs() == 1);
+	}
+
+	ASSERT(!weakPtr);
+	ASSERT(weakPtr.IsEmpty());
+
+	{
+		SharedPtr<String<>> ptr = MakeShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello");
+		ASSERT(ptr);
+		ASSERT(!ptr.IsEmpty());
+		ASSERT(ptr->Size() == 5);
+		ASSERT(*ptr == "Hello");
+		ASSERT(ptr.NumRefs() == 1);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		SharedPtr<String<>> ptr2 = ptr;
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2->Size() == 5);
+		ASSERT(*ptr2 == "Hello");
+		ASSERT(ptr.NumRefs() == 2);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		{
+			SharedPtr<String<>> ptr3 = ptr2;
+			ASSERT(ptr3);
+			ASSERT(!ptr3.IsEmpty());
+			ASSERT(ptr3->Size() == 5);
+			ASSERT(*ptr3 == "Hello");
+			ASSERT(ptr.NumRefs() == 3);
+			ASSERT(ptr.NumWeakRefs() == 0);
+		}
+
+		ASSERT(ptr.NumRefs() == 2);
+		ASSERT(ptr.NumWeakRefs() == 0);
+	}
+
+	{
+		ArenaAllocator arena;
+		SharedPtr<String<>> ptr = MakeShared<String<>, ArenaAllocator>(arena, "Hello");
+		ASSERT(ptr);
+		ASSERT(!ptr.IsEmpty());
+		ASSERT(ptr->Size() == 5);
+		ASSERT(*ptr == "Hello");
+
+		SharedPtr<String<>> ptr2 = ptr;
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2->Size() == 5);
+		ASSERT(*ptr2 == "Hello");
+
+		SharedPtr<String<>> ptr3 = ptr2;
+		ASSERT(ptr3);
+		ASSERT(!ptr3.IsEmpty());
+		ASSERT(ptr3->Size() == 5);
+		ASSERT(*ptr3 == "Hello");
+
+		SharedPtr<String<>> ptr4 = std::move(ptr3);
+		ASSERT(ptr4);
+		ASSERT(!ptr4.IsEmpty());
+		ASSERT(ptr4->Size() == 5);
+		ASSERT(*ptr4 == "Hello");
+	}
+}
 
 TEST_CASE("Containers/Function")
 {

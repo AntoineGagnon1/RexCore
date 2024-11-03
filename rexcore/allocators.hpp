@@ -10,6 +10,7 @@
 #include <concepts>
 #include <bit>
 #include <source_location>
+#include <functional>
 
 namespace RexCore
 {
@@ -176,6 +177,9 @@ namespace RexCore
 	class ArenaAllocator : public AllocatorBase<ArenaAllocator>
 	{
 	public:
+		REX_CORE_NO_COPY(ArenaAllocator);
+		REX_CORE_DEFAULT_MOVE(ArenaAllocator);
+
 		explicit ArenaAllocator(U64 maxSize = 16llu * 1024llu * 1024llu * 1024llu)
 			: m_currentSize(0)
 			, m_commitedSize(0)
