@@ -395,7 +395,8 @@ namespace RexCore
 
 		DataAndControl* ptrDataAndControl = (DataAndControl*)allocator.Allocate(sizeof(DataAndControl), alignof(DataAndControl));
 
-		// Yikes, can't control the type of the lambda capture so 
+		// Yikes, can't control the type of the lambda capture so have one lambda by copy and one by reference :(
+		// Would probably be better as a functor that takes a AllocatorRef<Allocator> as a member
 		if constexpr (std::is_empty_v<Allocator>)
 		{
 			new (&ptrDataAndControl->controlBlock) Internal::SharedPtrControlBlock(0, 1, [allocator]([[maybe_unused]] void* tPtr, void* controlPtr) mutable {
