@@ -5,6 +5,7 @@
 #include <rexcore/containers/map.hpp>
 #include <rexcore/containers/set.hpp>
 #include <rexcore/containers/smart_ptrs.hpp>
+#include <rexcore/containers/function.hpp>
 #include <rexcore/math.hpp>
 
 using namespace RexCore;
@@ -1296,5 +1297,53 @@ TEST_CASE("Containers/UniquePtr")
 		ASSERT(*ptr2 == "Hello");
 		ASSERT(ptr.Get() != ptr2.Get());
 		ASSERT(*ptr == *ptr);
+	}
+}
+
+
+TEST_CASE("Containers/Function")
+{
+	{ // Empty
+		Function<void()> func;
+		ASSERT(!func);
+	}
+
+	{ // Func ptr
+		Function<int()> func = +[]() { return 0; };
+		ASSERT(func);
+		ASSERT(func() == 0);
+
+		func = +[]() { return 1; };
+		ASSERT(func);
+		ASSERT(func() == 1);
+	}
+
+	{ // Lambda with capture
+		int value = 2;
+		Function<int()> func = [&] {return value; };
+		ASSERT(func);
+		ASSERT(func() == 2);
+		
+		value = 3;
+		func = [&] { return value; };
+		ASSERT(func);
+		ASSERT(func() == 3);
+	}
+
+	{ // Lambda too big for inline
+		struct big {
+			U64 a = 1;
+			U64 b = 2;
+			U64 c = 3;
+			U64 d = 4;
+		} bigData;
+
+		Function<int()> func = Function<int()>::Allocate<DefaultAllocator>([bigData] { return (int)bigData.a; });
+		ASSERT(func);
+		ASSERT(func() == 1);
+
+		func = Function<int()>::Allocate<DefaultAllocator>([bigData] { return (int)bigData.b; });
+		ASSERT(func);
+		ASSERT(func() == 2);
 	}
 }
