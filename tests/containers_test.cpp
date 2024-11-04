@@ -8,6 +8,8 @@
 #include <rexcore/containers/function.hpp>
 #include <rexcore/math.hpp>
 
+#include <thread>
+
 using namespace RexCore;
 
 class MoveOnlyType
@@ -1422,6 +1424,181 @@ TEST_CASE("Containers/SharedPtr")
 		ASSERT(!ptr4.IsEmpty());
 		ASSERT(ptr4->Size() == 5);
 		ASSERT(*ptr4 == "Hello");
+	}
+}
+
+TEST_CASE("Containers/AtomicSharedPtr")
+{
+	{
+		AtomicWeakPtr<String<>> weakPtr;
+		ASSERT(!weakPtr);
+		ASSERT(weakPtr.IsEmpty());
+	}
+
+	{
+		AtomicSharedPtr<String<>> ptr;
+		ASSERT(!ptr);
+		ASSERT(ptr.IsEmpty());
+		ASSERT(ptr.Get() == nullptr);
+		ASSERT(ptr.NumRefs() == 0);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		AtomicWeakPtr<String<>> weakPtr = ptr.GetWeak();
+		ASSERT(!weakPtr);
+		ASSERT(weakPtr.IsEmpty());
+	}
+
+	AtomicWeakPtr<String<>> weakPtr;
+	ASSERT(!weakPtr);
+	ASSERT(weakPtr.IsEmpty());
+
+	{
+		String<>* str = new String("hello");
+		AtomicSharedPtr<String<>> ptr = MakeAtomicSharedFromPtr<String<>, DefaultAllocator>(str);
+		ASSERT(ptr);
+		ASSERT(!ptr.IsEmpty());
+		ASSERT(ptr.Get() == str);
+		ASSERT(ptr.NumRefs() == 1);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		weakPtr = ptr.GetWeak();
+		ASSERT(weakPtr);
+		ASSERT(!weakPtr.IsEmpty());
+		ASSERT(ptr.NumWeakRefs() == 1);
+		ASSERT(weakPtr.Lock().Get() == str);
+
+		{
+			AtomicWeakPtr<String<>> weakPtr2 = weakPtr;
+			ASSERT(weakPtr2);
+			ASSERT(!weakPtr2.IsEmpty());
+			ASSERT(ptr.NumWeakRefs() == 2);
+			ASSERT(weakPtr2.Lock().Get() == str);
+		}
+
+		AtomicSharedPtr<String<>> ptr2 = ptr;
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2.Get() == str);
+		ASSERT(ptr2.NumRefs() == 2);
+		ASSERT(ptr2.NumWeakRefs() == 1);
+
+		AtomicSharedPtr<String<>> ptr3 = ptr2;
+		ASSERT(ptr3);
+		ASSERT(!ptr3.IsEmpty());
+		ASSERT(ptr3.Get() == str);
+		ASSERT(ptr3.NumRefs() == 3);
+		ASSERT(ptr3.NumWeakRefs() == 1);
+	}
+
+	ASSERT(!weakPtr);
+	ASSERT(weakPtr.IsEmpty());
+
+	{
+		AtomicSharedPtr<String<>> ptr = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello");
+		ASSERT(ptr);
+		ASSERT(!ptr.IsEmpty());
+		ASSERT(ptr->Size() == 5);
+		ASSERT(*ptr == "Hello");
+		ASSERT(ptr.NumRefs() == 1);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		AtomicSharedPtr<String<>> ptr2 = ptr;
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2->Size() == 5);
+		ASSERT(*ptr2 == "Hello");
+		ASSERT(ptr.NumRefs() == 2);
+		ASSERT(ptr.NumWeakRefs() == 0);
+
+		{
+			AtomicSharedPtr<String<>> ptr3 = ptr2;
+			ASSERT(ptr3);
+			ASSERT(!ptr3.IsEmpty());
+			ASSERT(ptr3->Size() == 5);
+			ASSERT(*ptr3 == "Hello");
+			ASSERT(ptr.NumRefs() == 3);
+			ASSERT(ptr.NumWeakRefs() == 0);
+		}
+
+		ASSERT(ptr.NumRefs() == 2);
+		ASSERT(ptr.NumWeakRefs() == 0);
+	}
+
+	{
+		ArenaAllocator arena;
+		AtomicSharedPtr<String<>> ptr = MakeAtomicShared<String<>, ArenaAllocator>(arena, "Hello");
+		ASSERT(ptr);
+		ASSERT(!ptr.IsEmpty());
+		ASSERT(ptr->Size() == 5);
+		ASSERT(*ptr == "Hello");
+
+		AtomicSharedPtr<String<>> ptr2 = ptr;
+		ASSERT(ptr2);
+		ASSERT(!ptr2.IsEmpty());
+		ASSERT(ptr2->Size() == 5);
+		ASSERT(*ptr2 == "Hello");
+
+		AtomicSharedPtr<String<>> ptr3 = ptr2;
+		ASSERT(ptr3);
+		ASSERT(!ptr3.IsEmpty());
+		ASSERT(ptr3->Size() == 5);
+		ASSERT(*ptr3 == "Hello");
+
+		AtomicSharedPtr<String<>> ptr4 = std::move(ptr3);
+		ASSERT(ptr4);
+		ASSERT(!ptr4.IsEmpty());
+		ASSERT(ptr4->Size() == 5);
+		ASSERT(*ptr4 == "Hello");
+	}
+
+
+	{ // Test for race conditions
+		AtomicSharedPtr<String<>> ptr1 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello1");
+		AtomicSharedPtr<String<>> ptr2 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello2");
+		AtomicSharedPtr<String<>> ptr3 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello3");
+		AtomicSharedPtr<String<>> ptr4 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello4");
+		AtomicSharedPtr<String<>> ptr5 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello5");
+
+		Vector<std::thread> threads;
+		threads.Reserve(100);
+
+		for (int ti = 0; ti < 100; ti++)
+		{
+			threads.EmplaceBack([&] {
+				for (int i = 0; i < 100'000; i++)
+				{
+					AtomicSharedPtr<String<>> ptr = ptr1;
+					ASSERT(ptr);
+					ASSERT(*ptr == "Hello1");
+					ASSERT(ptr.GetWeak().Lock().Get() == ptr.Get());
+
+					ptr = ptr2;
+					ASSERT(ptr);
+					ASSERT(*ptr == "Hello2");
+					ASSERT(ptr.GetWeak().Lock().Get() == ptr.Get());
+
+					ptr = ptr3;
+					ASSERT(ptr);
+					ASSERT(*ptr == "Hello3");
+					ASSERT(ptr.GetWeak().Lock().Get() == ptr.Get());
+
+					ptr = ptr4;
+					ASSERT(ptr);
+					ASSERT(*ptr == "Hello4");
+					ASSERT(ptr.GetWeak().Lock().Get() == ptr.Get());
+
+					ptr = ptr5;
+					ASSERT(ptr);
+					ASSERT(*ptr == "Hello5");
+					ASSERT(ptr.GetWeak().Lock().Get() == ptr.Get());
+				}
+			});
+		}
+
+		for (auto& t : threads)
+		{
+			t.join();
+		}
 	}
 }
 
