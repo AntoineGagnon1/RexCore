@@ -4,14 +4,12 @@
 
 void* operator new(size_t size)
 {
-	void* ptr = malloc(size);
+	void* ptr = RexCore::DefaultAllocator{}.Allocate(size, 8);
 	REX_CORE_ASSERT(ptr != nullptr);
-	RexCore::TrackAlloc(ptr, static_cast<RexCore::U64>(size), RexCore::AllocSourceLocation::current());
 	return ptr;
 }
 
 void operator delete(void* ptr, size_t size)
 {
-	RexCore::TrackFree(ptr, static_cast<RexCore::U64>(size), RexCore::AllocSourceLocation::current());
-	free(ptr);
+	RexCore::DefaultAllocator{}.Free(ptr, static_cast<RexCore::U64>(size));
 }
