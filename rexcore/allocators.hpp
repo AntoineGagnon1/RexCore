@@ -66,7 +66,7 @@ namespace RexCore
 
 	inline void TrackAlloc([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc) {}
 	inline void TrackFree([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc) {}
-	void StartTrackingMemory() {}
+	inline void StartTrackingMemory() {}
 	inline bool CheckForLeaks() { return false; }
 #endif
 

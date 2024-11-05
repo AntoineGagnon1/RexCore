@@ -7,6 +7,7 @@
 #include <rexcore/containers/smart_ptrs.hpp>
 #include <rexcore/containers/function.hpp>
 #include <rexcore/math.hpp>
+#include <rexcore/time.hpp>
 
 #include <thread>
 
@@ -1600,6 +1601,49 @@ TEST_CASE("Containers/AtomicSharedPtr")
 			t.join();
 		}
 	}
+}
+
+TEST_CASE("Containers/SharedPtrBenchmark")
+{
+	U64 rexCoreAtomicTime = 0;
+	{
+		AtomicSharedPtr<int> ptr = MakeAtomicShared<int, DefaultAllocator>(DefaultAllocator{}, 1);
+
+		Stopwatch sw;
+		for (int i = 0; i < 1'000'000; i++)
+		{
+			AtomicSharedPtr<int> copy = ptr;
+		}
+		rexCoreAtomicTime = sw.ElapsedNs() / 1'000'000;
+	}
+
+	U64 rexCoreTime = 0;
+	{
+		SharedPtr<int> ptr = MakeShared<int, DefaultAllocator>(DefaultAllocator{}, 1);
+
+		Stopwatch sw;
+		for (int i = 0; i < 1'000'000; i++)
+		{
+			SharedPtr<int> copy = ptr;
+		}
+		rexCoreTime = sw.ElapsedNs() / 1'000'000;
+	}
+
+	U64 stdTime = 0;
+	{
+		std::shared_ptr<int> ptr = std::make_shared<int>(1);
+
+		Stopwatch sw;
+		for (int i = 0; i < 1'000'000; i++)
+		{
+			std::shared_ptr<int> copy = ptr;
+		}
+		stdTime = sw.ElapsedNs() / 1'000'000;
+	}
+
+	printf("AtomicSharedPtr: %llu ns\n", rexCoreAtomicTime);
+	printf("SharedPtr: %llu ns\n", rexCoreTime);
+	printf("std::shared_ptr: %llu ns\n", stdTime);
 }
 
 TEST_CASE("Containers/Function")
