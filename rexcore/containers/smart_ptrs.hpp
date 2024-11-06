@@ -355,7 +355,7 @@ namespace RexCore
 		friend class WeakPtr<T>;
 
 		template<typename T2, IAllocator Allocator, typename ...Args>
-		friend SharedPtr<T2> MakeShared(AllocatorRef<Allocator> allocator, Args&& ...args);
+		friend SharedPtr<T2> AllocateShared(AllocatorRef<Allocator> allocator, Args&& ...args);
 
 		SharedPtr(PtrType ptr, Internal::SharedPtrControlBlock* controlBlock)
 			: m_controlBlock(controlBlock)
@@ -386,7 +386,7 @@ namespace RexCore
 	}
 
 	template<typename T, IAllocator Allocator, typename ...Args>
-	[[nodiscard]] SharedPtr<T> MakeShared(AllocatorRef<Allocator> allocator, Args&& ...args)
+	[[nodiscard]] SharedPtr<T> AllocateShared(AllocatorRef<Allocator> allocator, Args&& ...args)
 	{
 		struct DataAndControl
 		{
@@ -420,7 +420,11 @@ namespace RexCore
 		return SharedPtr<T>((T*)&ptrDataAndControl->data, &ptrDataAndControl->controlBlock);
 	}
 
-
+	template<typename T, typename ...Args>
+	[[nodiscard]] SharedPtr<T> MakeShared(Args&& ...args)
+	{
+		return AllocateShared<T, DefaultAllocator, Args...>(DefaultAllocator{}, std::forward<Args>(args)...);
+	}
 
 	namespace Internal
 	{
@@ -666,7 +670,7 @@ namespace RexCore
 		friend class AtomicWeakPtr<T>;
 
 		template<typename T2, IAllocator Allocator, typename ...Args>
-		friend AtomicSharedPtr<T2> MakeAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args);
+		friend AtomicSharedPtr<T2> AllocateAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args);
 
 		AtomicSharedPtr(PtrType ptr, Internal::AtomicSharedPtrControlBlock* controlBlock)
 			: m_controlBlock(controlBlock)
@@ -697,7 +701,7 @@ namespace RexCore
 	}
 
 	template<typename T, IAllocator Allocator, typename ...Args>
-	[[nodiscard]] AtomicSharedPtr<T> MakeAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args)
+	[[nodiscard]] AtomicSharedPtr<T> AllocateAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args)
 	{
 		struct DataAndControl
 		{
@@ -729,5 +733,11 @@ namespace RexCore
 		new (&ptrDataAndControl->data) T(std::forward<Args>(args)...);
 
 		return AtomicSharedPtr<T>((T*)&ptrDataAndControl->data, &ptrDataAndControl->controlBlock);
+	}
+
+	template<typename T, typename ...Args>
+	[[nodiscard]] AtomicSharedPtr<T> MakeAtomicShared(Args&& ...args)
+	{
+		return AllocateAtomicShared<T, DefaultAllocator, Args...>(DefaultAllocator{}, std::forward<Args>(args)...);
 	}
 }

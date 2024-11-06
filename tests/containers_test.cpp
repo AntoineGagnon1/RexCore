@@ -1370,7 +1370,7 @@ TEST_CASE("Containers/SharedPtr")
 	ASSERT(weakPtr.IsEmpty());
 
 	{
-		SharedPtr<String<>> ptr = MakeShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello");
+		SharedPtr<String<>> ptr = AllocateShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello");
 		ASSERT(ptr);
 		ASSERT(!ptr.IsEmpty());
 		ASSERT(ptr->Size() == 5);
@@ -1402,7 +1402,7 @@ TEST_CASE("Containers/SharedPtr")
 
 	{
 		ArenaAllocator arena;
-		SharedPtr<String<>> ptr = MakeShared<String<>, ArenaAllocator>(arena, "Hello");
+		SharedPtr<String<>> ptr = AllocateShared<String<>, ArenaAllocator>(arena, "Hello");
 		ASSERT(ptr);
 		ASSERT(!ptr.IsEmpty());
 		ASSERT(ptr->Size() == 5);
@@ -1495,7 +1495,7 @@ TEST_CASE("Containers/AtomicSharedPtr")
 	ASSERT(weakPtr.IsEmpty());
 
 	{
-		AtomicSharedPtr<String<>> ptr = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello");
+		AtomicSharedPtr<String<>> ptr = AllocateAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello");
 		ASSERT(ptr);
 		ASSERT(!ptr.IsEmpty());
 		ASSERT(ptr->Size() == 5);
@@ -1527,7 +1527,7 @@ TEST_CASE("Containers/AtomicSharedPtr")
 
 	{
 		ArenaAllocator arena;
-		AtomicSharedPtr<String<>> ptr = MakeAtomicShared<String<>, ArenaAllocator>(arena, "Hello");
+		AtomicSharedPtr<String<>> ptr = AllocateAtomicShared<String<>, ArenaAllocator>(arena, "Hello");
 		ASSERT(ptr);
 		ASSERT(!ptr.IsEmpty());
 		ASSERT(ptr->Size() == 5);
@@ -1554,11 +1554,11 @@ TEST_CASE("Containers/AtomicSharedPtr")
 
 
 	{ // Test for race conditions
-		AtomicSharedPtr<String<>> ptr1 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello1");
-		AtomicSharedPtr<String<>> ptr2 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello2");
-		AtomicSharedPtr<String<>> ptr3 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello3");
-		AtomicSharedPtr<String<>> ptr4 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello4");
-		AtomicSharedPtr<String<>> ptr5 = MakeAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello5");
+		AtomicSharedPtr<String<>> ptr1 = AllocateAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello1");
+		AtomicSharedPtr<String<>> ptr2 = AllocateAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello2");
+		AtomicSharedPtr<String<>> ptr3 = AllocateAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello3");
+		AtomicSharedPtr<String<>> ptr4 = AllocateAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello4");
+		AtomicSharedPtr<String<>> ptr5 = AllocateAtomicShared<String<>, DefaultAllocator>(DefaultAllocator{}, "Hello5");
 
 		Vector<std::thread> threads;
 		threads.Reserve(100);
@@ -1601,49 +1601,6 @@ TEST_CASE("Containers/AtomicSharedPtr")
 			t.join();
 		}
 	}
-}
-
-TEST_CASE("Containers/SharedPtrBenchmark")
-{
-	U64 rexCoreAtomicTime = 0;
-	{
-		AtomicSharedPtr<int> ptr = MakeAtomicShared<int, DefaultAllocator>(DefaultAllocator{}, 1);
-
-		Stopwatch sw;
-		for (int i = 0; i < 1'000'000; i++)
-		{
-			AtomicSharedPtr<int> copy = ptr;
-		}
-		rexCoreAtomicTime = sw.ElapsedNs() / 1'000'000;
-	}
-
-	U64 rexCoreTime = 0;
-	{
-		SharedPtr<int> ptr = MakeShared<int, DefaultAllocator>(DefaultAllocator{}, 1);
-
-		Stopwatch sw;
-		for (int i = 0; i < 1'000'000; i++)
-		{
-			SharedPtr<int> copy = ptr;
-		}
-		rexCoreTime = sw.ElapsedNs() / 1'000'000;
-	}
-
-	U64 stdTime = 0;
-	{
-		std::shared_ptr<int> ptr = std::make_shared<int>(1);
-
-		Stopwatch sw;
-		for (int i = 0; i < 1'000'000; i++)
-		{
-			std::shared_ptr<int> copy = ptr;
-		}
-		stdTime = sw.ElapsedNs() / 1'000'000;
-	}
-
-	printf("AtomicSharedPtr: %llu ns\n", rexCoreAtomicTime);
-	printf("SharedPtr: %llu ns\n", rexCoreTime);
-	printf("std::shared_ptr: %llu ns\n", stdTime);
 }
 
 TEST_CASE("Containers/Function")
