@@ -107,7 +107,7 @@ namespace RexCore
 		}
 		else
 		{
-			if (found->second.size != size)
+			if (size != 0 && found->second.size != size)
 			{
 				REX_CORE_ASYMMETRIC_FREE(ptr, size, loc, found->second.size, found->second.loc);
 			}

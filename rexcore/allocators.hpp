@@ -52,6 +52,7 @@ namespace RexCore
 	using AllocSourceLocation = std::source_location;
 
 	void TrackAlloc(void* ptr, U64 size, AllocSourceLocation loc);
+	// Pass size = 0 if the size is not known
 	void TrackFree(void* ptr, U64 size, AllocSourceLocation loc);
 	
 	void StartTrackingMemory();
@@ -133,7 +134,7 @@ namespace RexCore
 			return ptr;
 		}
 
-		[[nodiscard]]void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
+		[[nodiscard]]void* Reallocate(void* ptr, U64 oldSize, U64 newSize, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			REX_CORE_ASSERT(ptr != nullptr);
 			TrackFree(ptr, oldSize, loc);
@@ -142,9 +143,15 @@ namespace RexCore
 			return newPtr;
 		}
 
-		void Free(void* ptr, [[maybe_unused]] U64 size, AllocSourceLocation loc = AllocSourceLocation::current())
+		void Free(void* ptr, U64 size, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
 			TrackFree(ptr, size, loc);
+			_aligned_free(ptr);
+		}
+
+		void FreeNoSize(void* ptr, AllocSourceLocation loc = AllocSourceLocation::current())
+		{
+			TrackFree(ptr, 0, loc);
 			_aligned_free(ptr);
 		}
 	};
