@@ -16,6 +16,7 @@ namespace RexCore
 
 	void* ReservePages(U64 numPages)
 	{
+		REX_CORE_TRACE_FUNC();
 #if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 		void* ptr = VirtualAlloc(nullptr, numPages * PageSize, MEM_RESERVE, PAGE_READWRITE);
 #else
@@ -27,11 +28,13 @@ namespace RexCore
 
 	void ReleasePages(void* address, [[maybe_unused]]U64 numPages)
 	{
+		REX_CORE_TRACE_FUNC();
 		REX_CORE_ASSERT(VirtualFree(address, 0u, MEM_RELEASE));
 	}
 
 	void CommitPagesUntracked(void* address, U64 numPages)
 	{
+		REX_CORE_TRACE_FUNC();
 #if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 		void* newPtr = VirtualAlloc(address, numPages * PageSize, MEM_COMMIT, PAGE_READWRITE);
 #else
@@ -42,6 +45,7 @@ namespace RexCore
 
 	void DecommitPagesUntracked(void* address, U64 numPages)
 	{
+		REX_CORE_TRACE_FUNC();
 		REX_CORE_ASSERT(VirtualFree(address, numPages * PageSize, MEM_DECOMMIT));
 	}
 
@@ -85,6 +89,7 @@ namespace RexCore
 
 	void TrackAlloc(void* ptr, U64 size, AllocSourceLocation loc)
 	{
+		REX_CORE_TRACE_FUNC();
 		if (!s_aliveAlloc)
 			return;
 
@@ -96,6 +101,7 @@ namespace RexCore
 
 	void TrackFree(void* ptr, U64 size, [[maybe_unused]]AllocSourceLocation loc)
 	{
+		REX_CORE_TRACE_FUNC();
 		if (!s_aliveAlloc)
 			return;
 

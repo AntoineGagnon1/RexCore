@@ -1,4 +1,6 @@
 #pragma once
+#include <rexcore/vendors/Superluminal/PerformanceAPI.h>
+
 #include <stdint.h>
 
 namespace RexCore
@@ -30,4 +32,13 @@ namespace RexCore
 #define REX_CORE_DEFAULT_COPY(T) \
 	T(const T&) = default; \
 	T& operator=(const T&) = default
+
+
+#ifdef REX_CORE_TRACE_ENABLED
+#define REX_CORE_TRACE_FUNC() PERFORMANCEAPI_INSTRUMENT(__FUNCTION__)
+#define REX_CORE_TRACE_NAMED(name) PERFORMANCEAPI_INSTRUMENT(name)
+#else
+#define REX_CORE_TRACE_FUNC()
+#define REX_CORE_TRACE_NAMED(name)
+#endif
 }

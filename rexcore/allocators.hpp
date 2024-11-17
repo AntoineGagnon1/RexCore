@@ -114,6 +114,7 @@ namespace RexCore
 		// alignment must be the same as the original allocation, newSize can be smaller than oldSize
 		[[nodiscard]] void* Reallocate(this auto&& self, void* ptr, U64 oldSize, U64 newSize, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			static_assert(IAllocator<std::remove_reference_t<decltype(self)>>);
 			REX_CORE_ASSERT(ptr != nullptr);
 			void* newPtr = self.Allocate(newSize, alignment, loc);
@@ -129,6 +130,7 @@ namespace RexCore
 	public:
 		[[nodiscard]] void* Allocate(U64 size, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			void* ptr = _aligned_malloc(size, alignment);
 			TrackAlloc(ptr, size, loc);
 			return ptr;
@@ -136,6 +138,7 @@ namespace RexCore
 
 		[[nodiscard]]void* Reallocate(void* ptr, U64 oldSize, U64 newSize, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			REX_CORE_ASSERT(ptr != nullptr);
 			TrackFree(ptr, oldSize, loc);
 			void* newPtr = _aligned_realloc(ptr, newSize, alignment);
@@ -145,12 +148,14 @@ namespace RexCore
 
 		void Free(void* ptr, U64 size, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			TrackFree(ptr, size, loc);
 			_aligned_free(ptr);
 		}
 
 		void FreeNoSize(void* ptr, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			TrackFree(ptr, 0, loc);
 			_aligned_free(ptr);
 		}
@@ -163,6 +168,7 @@ namespace RexCore
 	public:
 		[[nodiscard]] void* Allocate(U64 size, U64 alignment, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			REX_CORE_ASSERT(alignment <= PageSize);
 			const U64 numPages = Math::CeilDiv(size, PageSize);
 			void* pages = ReservePages(numPages);
@@ -173,6 +179,7 @@ namespace RexCore
 
 		void Free(void* ptr, [[maybe_unused]] U64 size, AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			const U64 numPages = Math::CeilDiv(size, PageSize);
 			DecommitPagesUntracked(ptr, numPages);
 			ReleasePages(ptr, numPages);
@@ -207,6 +214,7 @@ namespace RexCore
 
 		[[nodiscard]] void* Allocate(U64 size, U64 alignment, [[maybe_unused]] AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			const U64 offset = AlignedOffset(m_data + m_currentSize, alignment);
 			const U64 startIndex = m_currentSize + offset;
 			m_currentSize = startIndex + size;
@@ -218,6 +226,7 @@ namespace RexCore
 
 		[[nodiscard]] void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment, [[maybe_unused]] AllocSourceLocation loc = AllocSourceLocation::current())
 		{
+			REX_CORE_TRACE_FUNC();
 			REX_CORE_ASSERT(ptr != nullptr && ptr <= m_data + m_currentSize);
 			
 			if (ptr == m_data + m_currentSize - oldSize)
@@ -240,6 +249,7 @@ namespace RexCore
 
 		void Reset()
 		{
+			REX_CORE_TRACE_FUNC();
 			// TODO : maybe uncommit pages ?
 			m_currentSize = 0;
 		}
