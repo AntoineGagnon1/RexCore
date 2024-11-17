@@ -39,6 +39,14 @@ namespace RexCore
 		return std::wcsncmp(a, b, length);
 	}
 
+	namespace Internal
+	{
+		inline U64 CalcGrowSize(U64 currentSize, U64 newSize)
+		{
+			return Math::Max(Math::NextPowerOfTwo(currentSize), newSize);
+		}
+	}
+
 	// Base for string-like types, see String and StringView
 	template<typename CharT, typename StringViewT, typename ParentT>
 	class StringTypeBase
@@ -73,6 +81,7 @@ namespace RexCore
 		}
 		[[nodiscard]] constexpr bool operator==(this const A& a, const B& b)
 		{
+			REX_CORE_TRACE_FUNC();
 			if (a.Size() != b.Size())
 				return false;
 
@@ -92,6 +101,7 @@ namespace RexCore
 		}
 		[[nodiscard]] constexpr bool operator==(this const A& a, const CharT* b)
 		{
+			REX_CORE_TRACE_FUNC();
 			if (a.Data() == b)
 				return true;
 
@@ -108,9 +118,9 @@ namespace RexCore
 				{ std::declval<B>().Data() } -> std::convertible_to<const CharT*>;
 				{ std::declval<B>().Size() } -> std::convertible_to<U64>;
 		}
-
 		[[nodiscard]] constexpr std::strong_ordering operator<=>(this const A& a, const B& b)
 		{
+			REX_CORE_TRACE_FUNC();
 			if (a.Data() == b.Data())
 				return std::strong_ordering::equal;
 			
@@ -203,6 +213,7 @@ namespace RexCore
 		explicit constexpr StringBase(BaseT::SpanType from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 			: m_allocator(allocator)
 		{
+			REX_CORE_TRACE_FUNC();
 			Reserve(from.Size());
 			MemCopy(from.Data(), Data(), from.Size() * sizeof(CharT));
 			SetSize(from.Size());
@@ -211,6 +222,7 @@ namespace RexCore
 		explicit constexpr StringBase(const CharT* nullTerminatedString, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 			: m_allocator(allocator)
 		{
+			REX_CORE_TRACE_FUNC();
 			const U64 length = StringLength(nullTerminatedString);
 			Reserve(length);
 			MemCopy(nullTerminatedString, Data(), length * sizeof(CharT));
@@ -220,6 +232,7 @@ namespace RexCore
 		explicit constexpr StringBase(StringViewType from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 			: m_allocator(allocator)
 		{
+			REX_CORE_TRACE_FUNC();
 			Reserve(from.Size());
 			MemCopy(from.Data(), Data(), from.Size() * sizeof(CharT));
 			SetSize(from.Size());
@@ -233,6 +246,7 @@ namespace RexCore
 
 		constexpr void Reserve(U64 newCapacity)
 		{
+			REX_CORE_TRACE_FUNC();
 			if (newCapacity <= Capacity())
 				return;
 
@@ -253,6 +267,7 @@ namespace RexCore
 
 		constexpr void Resize(U64 newSize, CharT newCharsValue = '\0')
 		{
+			REX_CORE_TRACE_FUNC();
 			if (newSize == 0)
 			{
 				Free();
@@ -299,6 +314,7 @@ namespace RexCore
 
 		constexpr void Free()
 		{
+			REX_CORE_TRACE_FUNC();
 			Base::Clear();
 			if (!IsSmallString())
 			{
@@ -311,9 +327,13 @@ namespace RexCore
 
 		StringBase<CharT, Allocator, InplaceSize>& operator+=(StringViewType rhs)
 		{
-			Reserve(Size() + rhs.Size());
+			REX_CORE_TRACE_FUNC();
+			const auto newSize = Size() + rhs.Size();
+			if (Capacity() <= newSize)
+				Reserve(Internal::CalcGrowSize(Capacity(), newSize));
+			
 			MemCopy(rhs.Data(), Data() + Size(), rhs.Size() * sizeof(CharT));
-			SetSize(Size() + rhs.Size());
+			SetSize(newSize);
 			return *this;
 		}
 
@@ -366,6 +386,7 @@ namespace RexCore
 	}
 	inline StringT operator+(const StringT& lhs, const StringViewT& rhs)
 	{
+		REX_CORE_TRACE_FUNC();
 		StringT result = [&] {
 			if constexpr (requires { lhs.GetAllocator(); })
 				return StringT(lhs.GetAllocator());
@@ -381,6 +402,7 @@ namespace RexCore
 	template<typename StringT>
 	inline StringT operator+(const StringT& lhs, const typename StringT::CharType* rhs)
 	{
+		REX_CORE_TRACE_FUNC();
 		StringT result = [&] {
 			if constexpr (requires { lhs.GetAllocator(); })
 				return StringT(lhs.GetAllocator());

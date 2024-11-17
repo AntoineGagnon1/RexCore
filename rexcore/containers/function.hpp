@@ -25,7 +25,7 @@ namespace RexCore
 		
 		Function Clone() const
 		{
-			return Function(*static_cast<Impl*>(this));
+			return Function(*static_cast<const Impl*>(this));
 		}
 
 		template<typename T>

@@ -2,6 +2,7 @@
 
 #include <concepts>
 #include <limits>
+#include <bit>
 
 namespace RexCore::Math
 {
@@ -34,5 +35,11 @@ namespace RexCore::Math
 	constexpr T MaxValue()
 	{
 		return std::numeric_limits<T>::max();
+	}
+
+	template<std::integral T>
+	constexpr T NextPowerOfTwo(T v)
+	{
+		return std::bit_ceil(v);
 	}
 }

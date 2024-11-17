@@ -1,5 +1,8 @@
 #pragma once
 
+// #define REX_CORE_TRACK_ALLOCS
+// #define REX_CORE_TRACE_ENABLED
+
 #ifndef REX_CORE_ASSERT
 #include <cassert>
 #define REX_CORE_ASSERT(cond, ...) assert(cond)

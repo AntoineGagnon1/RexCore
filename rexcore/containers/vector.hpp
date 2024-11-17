@@ -56,8 +56,16 @@ namespace RexCore
 			}();
 
 			clone.Reserve(self.Size());
-			for (const T& item : self)
-				clone.EmplaceBack(RexCore::Clone(item));
+
+			if constexpr (std::is_trivially_copyable_v<T>)
+			{
+				MemCopy(self.Data(), clone.Data(), self.Size() * sizeof(T));
+			}
+			else
+			{
+				for (const T& item : self)
+					clone.EmplaceBack(RexCore::Clone(item));
+			}
 			
 			return clone;
 		}
@@ -173,7 +181,7 @@ namespace RexCore
 			REX_CORE_ASSERT(size > 0);
 
 			T value = std::move(self.Data()[size - 1]);
-			self.Data()[size - 1].~T();
+			self.Data()[size - 1].~T(); // TODO : probably not necessary, moved object should do nothing in the destructor
 			self.SetSize(size - 1);
 			return value;
 		}

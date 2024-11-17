@@ -24,3 +24,4 @@ workspace "RexCore"
     
     include "rexcore"
     include "tests"
+    include "benchmarks"
