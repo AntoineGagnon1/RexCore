@@ -142,4 +142,59 @@
       <Item Name="Ptr" ExcludeView="simple">m_ptr</Item>
     </Expand>
   </Type>
+
+  <Type Name="RexCore::HashSet&lt;*, *&gt;">
+    <DisplayString>{{Size={num_elements}}}</DisplayString>
+
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">num_elements</Item>
+      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
+
+      <CustomListItems>
+        <Variable Name="i" InitialValue="0"/>
+        <Variable Name="entry_it" InitialValue="entries + (ptrdiff_t)(num_slots_minus_one + max_lookups) - 1"/>
+        <Loop Condition="i &lt; num_elements">
+          <Loop Condition="entry_it->distance_from_desired &lt; 0">
+            <Exec>--entry_it</Exec>
+          </Loop>
+          <Item>entry_it-&gt;value</Item>
+          <Exec>++i</Exec>
+          <Exec>--entry_it</Exec>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+
+  <Type Name="RexCore::HashMap&lt;*, *, *&gt;">
+    <Intrinsic Name="num_slots" Expression="num_slots_minus_one ? num_slots_minus_one + 1 : 0"/>
+    
+    <DisplayString>{{Size={num_elements}}}</DisplayString>
+
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">num_elements</Item>
+      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
+
+      <CustomListItems>
+        <Variable Name="i" InitialValue="0"/>
+        <Variable Name="current" InitialValue="entries + num_slots() / Impl_BlockSize"/>
+        <Variable Name="index" InitialValue="num_slots()"/>
+        
+        <Loop Condition="i &lt; num_elements">
+          <Exec Condition="index % Impl_BlockSize == 0">--current</Exec>
+          <If Condition="--index != 0">
+            <Loop Condition="unsigned char(current-&gt;control_bytes[index % Impl_BlockSize]) == 0b11111111">
+              <Exec Condition="index % Impl_BlockSize == 0">--current</Exec>
+              <If Condition="--index == 0">
+                <Break/>
+              </If>
+            </Loop>
+          </If>
+
+          <Item Name="[{current->data[index % Impl_BlockSize].first}]">current->data[index % Impl_BlockSize].second</Item>
+          <Exec>++i</Exec>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  
 </AutoVisualizer>

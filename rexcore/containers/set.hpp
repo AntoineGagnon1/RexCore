@@ -1,6 +1,7 @@
 #pragma once
 #include <rexcore/core.hpp>
 #include <rexcore/allocators.hpp>
+#include <rexcore/concepts.hpp>
 
 #pragma warning(push, 0)
 #include <rexcore/vendors/flat_hash_map.hpp>

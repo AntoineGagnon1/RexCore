@@ -15,6 +15,7 @@ namespace RexCore
 	{
 	private:
 		using Impl = ska::bytell_hash_map<Key, Value, std::hash<Key>, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key, Value>, Allocator>>;
+		constexpr static int Impl_BlockSize = ska::detailv8::CalculateBytellBlockSize<Key, Value>::value; // For natvis
 
 	public:
 		using Iterator = typename Impl::iterator;
