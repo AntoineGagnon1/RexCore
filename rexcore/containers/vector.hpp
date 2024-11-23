@@ -60,6 +60,7 @@ namespace RexCore
 			if constexpr (std::is_trivially_copyable_v<T>)
 			{
 				MemCopy(self.Data(), clone.Data(), self.Size() * sizeof(T));
+				clone.SetSize(self.Size());
 			}
 			else
 			{
