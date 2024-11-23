@@ -196,5 +196,26 @@
       </CustomListItems>
     </Expand>
   </Type>
-  
+
+  <Type Name="RexCore::DequeBase&lt;*, *, *&gt;">
+    <DisplayString>{{Size={m_size}}}</DisplayString>
+
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">m_size</Item>
+      <Item Name="Capacity" ExcludeView="simple">m_capacity</Item>
+      <Item Name="Num Blocks" ExcludeView="simple">m_blocks.m_size</Item>
+      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
+      <Item Name="Item Type" ExcludeView="simple">"$T2"</Item>
+      <Item Name="Index Type" ExcludeView="simple">"$T1"</Item>
+
+      <CustomListItems>
+        <Variable Name="i" InitialValue="0"/>
+        <Loop Condition="i &lt; m_size">
+          <Item>m_blocks.m_data[(i + m_start) / BlockSize]-&gt;data[(i + m_start) % BlockSize]</Item>
+          <Exec>++i</Exec>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+
 </AutoVisualizer>
