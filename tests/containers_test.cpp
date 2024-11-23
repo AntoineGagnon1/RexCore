@@ -6,6 +6,7 @@
 #include <rexcore/containers/set.hpp>
 #include <rexcore/containers/smart_ptrs.hpp>
 #include <rexcore/containers/function.hpp>
+#include <rexcore/containers/deque.hpp>
 #include <rexcore/math.hpp>
 #include <rexcore/time.hpp>
 
@@ -1648,4 +1649,131 @@ TEST_CASE("Containers/Function")
 		ASSERT(func);
 		ASSERT(func() == 2);
 	}
+}
+
+template<typename DequeT>
+void TestDeque(AllocatorRef<typename DequeT::AllocatorType> allocator)
+{
+	using ValueType = typename DequeT::ValueType;
+	using IndexType = typename DequeT::IndexType;
+
+	DequeT deque = DequeT(allocator);
+
+	// Test IsEmpty, Size, Capacity
+	ASSERT(deque.IsEmpty());
+	ASSERT(deque.Size() == 0);
+	ASSERT(deque.Capacity() == 0);
+
+	// Test PushBack and EmplaceBack
+	for (IndexType i = 0; i < 2048; ++i)
+		deque.PushBack(static_cast<ValueType>(i));
+	ASSERT(!deque.IsEmpty());
+	ASSERT(deque.Size() == 2048);
+	for (IndexType i = 0; i < 2048; ++i)
+		ASSERT(deque[i] == static_cast<ValueType>(i));
+
+	deque.EmplaceBack(static_cast<ValueType>(2048));
+	ASSERT(deque.Size() == 2049);
+	ASSERT(deque[2048] == static_cast<ValueType>(2048));
+
+	// Test PushFront and EmplaceFront
+	deque.PushFront(static_cast<ValueType>(-1));
+	ASSERT(deque.Size() == 2050);
+	ASSERT(deque[0] == static_cast<ValueType>(-1));
+
+	for (IndexType i = 0; i < 1000; i++)
+		deque.EmplaceFront(-static_cast<ValueType>(i));
+
+	ASSERT(deque.Size() == 3050);
+	for (IndexType i = 0; i < 1000; i++) {
+		ASSERT(deque[i] == -999 + static_cast<ValueType>(i));
+	}
+
+	// Test PopBack and PopFront
+	for (IndexType i = 0; i < 1000; i++) {
+		ValueType back = deque.PopBack();
+		ASSERT(back == static_cast<ValueType>(2048 - i));
+	}
+	ASSERT(deque.Size() == 2050);
+
+	for (IndexType i = 0; i < 1000; i++) {
+		ValueType front = deque.PopFront();
+		ASSERT(front == -999 + static_cast<ValueType>(i));
+	}
+	ASSERT(deque.Size() == 1050);
+
+	// Test First and Last
+	ASSERT(deque.First() == static_cast<ValueType>(-1));
+	ASSERT(deque.Last() == static_cast<ValueType>(1048));
+
+	// Test Contains
+	ASSERT(deque.Contains(static_cast<ValueType>(10)));
+	ASSERT(!deque.Contains(static_cast<ValueType>(10000)));
+
+	// Test TryFind
+	ValueType* found = deque.TryFind(static_cast<ValueType>(10));
+	ASSERT(found && *found == static_cast<ValueType>(10));
+
+	ValueType* notFound = deque.TryFind(static_cast<ValueType>(10000));
+	ASSERT(notFound == nullptr);
+
+	// Test Clear
+	deque.Clear();
+	ASSERT(deque.IsEmpty());
+	ASSERT(deque.Size() == 0);
+
+	// Test Reserve and Resize
+	deque.Reserve(32);
+	ASSERT(deque.Capacity() >= 32);
+
+	deque.Resize(1024, static_cast<ValueType>(42));
+	ASSERT(deque.Size() == 1024);
+	for (IndexType i = 0; i < 1024; ++i)
+		ASSERT(deque[i] == static_cast<ValueType>(42));
+
+	deque.Resize(4);
+	ASSERT(deque.Size() == 4);
+
+	// Test Clone
+	DequeT clone = deque.Clone();
+	ASSERT(clone.Size() == deque.Size());
+	for (IndexType i = 0; i < clone.Size(); ++i)
+		ASSERT(clone[i] == deque[i]);
+
+	// Test Begin and End
+	IndexType index = 0;
+	for (auto it = deque.Begin(); it != deque.End(); ++it)
+		ASSERT(*it == deque[index++]);
+
+	// Test Iterators with ConstDeque
+	const DequeT& constDeque = deque;
+	index = 0;
+	for (auto it = constDeque.CBegin(); it != constDeque.CEnd(); ++it)
+		ASSERT(*it == deque[index++]);
+
+	// Test ShrinkToFit and Free
+	deque.ShrinkToFit();
+	ASSERT(deque.Capacity() >= deque.Size());
+
+	deque.Free();
+	ASSERT(deque.IsEmpty());
+	ASSERT(deque.Size() == 0);
+	ASSERT(deque.Capacity() == 0);
+}
+
+TEST_CASE("Containers/Deque")
+{
+	ArenaAllocator arena;
+
+	// Test SmallDeque with default and arena allocators
+	TestDeque<SmallDeque<S64>>(DefaultAllocator{});
+	TestDeque<SmallDeque<S64, ArenaAllocator>>(arena);
+
+	// Test Deque with default and arena allocators
+	TestDeque<Deque<S64>>(DefaultAllocator{});
+	TestDeque<Deque<S64, ArenaAllocator>>(arena);
+
+	// Test BigDeque with default and arena allocators
+	TestDeque<BigDeque<S64>>(DefaultAllocator{});
+	TestDeque<BigDeque<S64, ArenaAllocator>>(arena);
 }
