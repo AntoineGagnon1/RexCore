@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <format>
+#include <atomic>
 
 namespace RexCore::Tests
 {
@@ -38,7 +39,7 @@ namespace RexCore::Tests
 			}
 
 			printf("\n\n");
-			printf("Ran %llu asserts in %llu tests.\n", s_AssertCount, s_testCases.size());
+			printf("Ran %llu asserts in %llu tests.\n", s_AssertCount.load(), s_testCases.size());
 			if (testFailed == 0)
 				printf("\x1B[32mAll %llu tests passed!\033[0m\n", s_testCases.size());
 			else
@@ -46,7 +47,7 @@ namespace RexCore::Tests
 			return testFailed == 0;
 		}
 
-		inline static size_t s_AssertCount = 0;
+		inline static std::atomic_uint64_t s_AssertCount = 0;
 
 	private:
 		struct TestCase
