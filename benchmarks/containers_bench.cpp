@@ -1,14 +1,18 @@
 #include <benchmarks/bench_utils.hpp>
 
 #include <rexcore/core.hpp>
+#include <rexcore/allocators.hpp>
 #include <rexcore/containers/string.hpp>
 #include <rexcore/containers/vector.hpp>
 #include <rexcore/containers/smart_ptrs.hpp>
-#include <rexcore/allocators.hpp>
+#include <rexcore/containers/set.hpp>
+#include <rexcore/containers/map.hpp>
 
 #include <vector>
 #include <memory>
 #include <string>
+#include <unordered_set>
+#include <unordered_map>
 
 using namespace RexCore;
 
@@ -73,6 +77,9 @@ BENCHMARK("Containers/Vector")
 	BENCH_LOOP("Vector - PopBack", 1'000'000, 1, {
 		vec.PopBack();
 	});
+	BENCH_LOOP("Vector - Copy", 100'000, 1, {
+		Vector<int> copy = vec.Clone();
+	});
 
 	InplaceVector<int, 16> inplaceVec;
 	BENCH_LOOP("InplaceVector - PushBack", 1'000'000, 1, {
@@ -85,6 +92,9 @@ BENCHMARK("Containers/Vector")
 	BENCH_LOOP("InplaceVector - PopBack", 1'000'000, 1, {
 		inplaceVec.PopBack();
 	});
+	BENCH_LOOP("InplaceVector - Copy", 100'000, 1, {
+		decltype(inplaceVec) copy = inplaceVec.Clone();
+	});
 
 	std::vector<int> stdVec;
 	BENCH_LOOP("std::vector - PushBack", 1'000'000, 1, {
@@ -96,6 +106,9 @@ BENCHMARK("Containers/Vector")
 		});
 	BENCH_LOOP("std::vector - PopBack", 1'000'000, 1, {
 		stdVec.pop_back();
+	});
+	BENCH_LOOP("std::vector - Copy", 100'000, 1, {
+		std::vector<int> copy = stdVec;
 	});
 }
 
@@ -116,4 +129,84 @@ BENCHMARK("Containers/String")
 	BENCH_LOOP("std::string - Copy", 10'000, 1, {
 		std::string copy = stdStr;
 	});
+}
+
+BENCHMARK("Containers/HashSet")
+{
+	{
+		HashSet<int> set;
+		BENCH_LOOP("HashSet - Insert", 1'000'000, 1, {
+			set.Insert(rand());
+		});
+
+		BENCH_LOOP("HashSet - LookUp", 1'000'000, 1, {
+			[[maybe_unused]] bool _ = set.Contains(rand());
+		});
+
+		U64 total = 0;
+		BENCH_LOOP("HashSet - Iterate", 100, set.Size(), {
+			for (const int& val : set) {
+				total += val;
+			}
+		});
+		printf("    Total: %llu\n", total);
+	}
+	{
+		std::unordered_set<int> set;
+		BENCH_LOOP("std::unordered_set - Insert", 1'000'000, 1, {
+			set.insert(rand());
+		});
+
+		BENCH_LOOP("std::unordered_set - LookUp", 1'000'000, 1, {
+			[[maybe_unused]] bool _ = set.contains(rand());
+		});
+
+		U64 total = 0;
+		BENCH_LOOP("std::unordered_set - Iterate", 100, set.size(), {
+			for (const int& val : set) {
+				total += val;
+			}
+		});
+		printf("    Total: %llu\n", total);
+	}
+}
+
+BENCHMARK("Containers/HashMap")
+{
+	{
+		HashMap<int, int> map;
+		BENCH_LOOP("HashMap - Insert", 1'000'000, 1, {
+			map.Insert(rand(), rand());
+		});
+
+		BENCH_LOOP("HashMap - LookUp", 1'000'000, 1, {
+			[[maybe_unused]] bool _ = map.Contains(rand());
+		});
+
+		U64 total = 0;
+		BENCH_LOOP("HashMap - Iterate", 100, map.Size(), {
+			for (auto&[k, v] : map) {
+				total += k + v;
+			}
+		});
+		printf("    Total: %llu\n", total);
+	}
+	{
+		std::unordered_map<int, int> map;
+		BENCH_LOOP("std::unordered_map - Insert", 1'000'000, 1, {
+			map.emplace(rand(), rand());
+		});
+
+		BENCH_LOOP("std::unordered_map - LookUp", 1'000'000, 1, {
+			[[maybe_unused]] bool _ = map.contains(rand());
+		});
+
+		U64 total = 0;
+		BENCH_LOOP("std::unordered_map - Iterate", 100, map.size(), {
+			for (auto& [k, v] : map) {
+				total += k + v;
+			}
+		});
+		printf("    Total: %llu\n", total);
+	}
 }

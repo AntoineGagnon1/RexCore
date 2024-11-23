@@ -40,7 +40,7 @@ namespace RexCore::Benchmark
 	class ScopeTimer
 	{
 	public:
-		ScopeTimer(const char* name, int count)
+		ScopeTimer(const char* name, U64 count)
 			: m_name(name)
 			, m_count(static_cast<double>(count))
 			, m_sw()
@@ -71,7 +71,7 @@ namespace RexCore::Benchmark
 #define BENCH_LOOP(name, count, extra_divisor, body) \
 	{ \
 		REX_CORE_TRACE_NAMED(name); \
-		::RexCore::Benchmark::ScopeTimer timer(name, count * extra_divisor); \
+		::RexCore::Benchmark::ScopeTimer timer(name, U64(count) * U64(extra_divisor)); \
 		for (int bench_i = 0; bench_i < count; bench_i++) \
 			body; \
 	}
