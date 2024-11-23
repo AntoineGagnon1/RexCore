@@ -121,6 +121,7 @@ namespace RexCore
 
 		[[nodiscard]] constexpr bool Contains(const T& value) const
 		{
+			REX_CORE_TRACE_FUNC();
 			for (const T& found : *this)
 			{
 				if (found == value)
@@ -132,6 +133,7 @@ namespace RexCore
 		// Will return nullptr if not found
 		[[nodiscard]] constexpr auto TryFind(this auto&& self, const T& value) -> CopyConst<decltype(self), T>*
 		{
+			REX_CORE_TRACE_FUNC();
 			for (CopyConst<decltype(self), T>& found : self)
 			{
 				if (found == value)
@@ -144,6 +146,7 @@ namespace RexCore
 		template<IPredicate<const T&> Predicate>
 		[[nodiscard]] constexpr auto TryFind(this auto&& self, Predicate&& predicate) -> CopyConst<decltype(self), T>*
 		{
+			REX_CORE_TRACE_FUNC();
 			for (CopyConst<decltype(self), T>& found : self)
 			{
 				if (predicate(found))
@@ -155,6 +158,7 @@ namespace RexCore
 		[[nodiscard]] DequeBase Clone() const
 		{
 			static_assert(IClonable<T>, "The value type must be IClonable in order to clone a deque");
+			REX_CORE_TRACE_FUNC();
 			DequeBase clone(m_allocator);
 			clone.m_blocks.Reserve(m_blocks.Size());
 			clone.m_start = m_start;
@@ -220,8 +224,11 @@ namespace RexCore
 
 		constexpr void Clear()
 		{
-			for (T& value : *this)
-				value.~T();
+			REX_CORE_TRACE_FUNC();
+			if constexpr (!std::is_trivially_destructible_v<T>) {
+				for (T& value : *this)
+					value.~T();
+			}
 			
 			for (Block* block : m_blocks)
 			{
@@ -236,6 +243,7 @@ namespace RexCore
 
 		constexpr void ShrinkToFit()
 		{
+			REX_CORE_TRACE_FUNC();
 			Block* ptr = m_freeList;
 			while (ptr != nullptr)
 			{
@@ -249,12 +257,14 @@ namespace RexCore
 
 		constexpr void Free()
 		{
+			REX_CORE_TRACE_FUNC();
 			Clear();
 			ShrinkToFit();
 		}
 
 		constexpr void Reserve(IndexT newCapacity)
 		{
+			REX_CORE_TRACE_FUNC();
 			if (newCapacity <= m_capacity)
 				return;
 
@@ -268,6 +278,7 @@ namespace RexCore
 		template<typename ...Args>
 		constexpr void Resize(IndexT newSize, Args&& ...constructorArgs)
 		{
+			REX_CORE_TRACE_FUNC();
 			if (newSize == 0)
 			{
 				Free();
@@ -294,6 +305,7 @@ namespace RexCore
 		constexpr void PushBack(const T& value)
 		{
 			static_assert(IClonable<T>, "The value type must be IClonable in order to PushBack into a deque");
+			REX_CORE_TRACE_FUNC();
 
 			IndexT newBlockIndex = (m_start + m_size) / BlockSize;
 			IndexT newIndexInBlock = (m_start + m_size) % BlockSize;
@@ -311,6 +323,7 @@ namespace RexCore
 		template<typename ...Args>
 		constexpr T& EmplaceBack(Args&& ...constructorArgs)
 		{
+			REX_CORE_TRACE_FUNC();
 			IndexT newBlockIndex = (m_start + m_size) / BlockSize;
 			IndexT newIndexInBlock = (m_start + m_size) % BlockSize;
 
@@ -327,6 +340,7 @@ namespace RexCore
 
 		constexpr T PopBack()
 		{
+			REX_CORE_TRACE_FUNC();
 			REX_CORE_ASSERT(m_size > 0);
 
 			T temp = std::move(Last());
@@ -344,6 +358,7 @@ namespace RexCore
 		constexpr void PushFront(const T& value)
 		{
 			static_assert(IClonable<T>, "The value type must be IClonable in order to PushFront into a deque");
+			REX_CORE_TRACE_FUNC();
 
 			if (m_start == 0)
 			{
@@ -362,6 +377,8 @@ namespace RexCore
 		template<typename ...Args>
 		constexpr T& EmplaceFront(Args&& ...constructorArgs)
 		{
+			REX_CORE_TRACE_FUNC();
+
 			if (m_start == 0)
 			{
 				m_start = BlockSize - 1;
@@ -379,6 +396,7 @@ namespace RexCore
 
 		constexpr T PopFront()
 		{
+			REX_CORE_TRACE_FUNC();
 			REX_CORE_ASSERT(m_size > 0);
 
 			T temp = std::move(First());
@@ -418,18 +436,21 @@ namespace RexCore
 
 		void AddBlockToFreeList(Block* block)
 		{
+			REX_CORE_TRACE_FUNC();
 			block->next = m_freeList;
 			m_freeList = block;
 		}
 
 		Block* AllocateBlock()
 		{
+			REX_CORE_TRACE_FUNC();
 			m_capacity += BlockSize;
 			return static_cast<Block*>(m_allocator.Allocate(sizeof(Block), alignof(T)));
 		}
 
 		Block* GetBlock()
 		{
+			REX_CORE_TRACE_FUNC();
 			if (m_freeList != nullptr)
 			{
 				Block* block = m_freeList;

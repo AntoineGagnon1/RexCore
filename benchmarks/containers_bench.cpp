@@ -7,12 +7,14 @@
 #include <rexcore/containers/smart_ptrs.hpp>
 #include <rexcore/containers/set.hpp>
 #include <rexcore/containers/map.hpp>
+#include <rexcore/containers/deque.hpp>
 
 #include <vector>
 #include <memory>
 #include <string>
 #include <unordered_set>
 #include <unordered_map>
+#include <deque>
 
 using namespace RexCore;
 
@@ -208,5 +210,74 @@ BENCHMARK("Containers/HashMap")
 			}
 		});
 		printf("    Total: %llu\n", total);
+	}
+}
+
+BENCHMARK("Containers/Deque")
+{
+	{
+		Deque<int> deq;
+		BENCH_LOOP("Deque - PushBack", 1'000'000, 1, {
+			deq.PushBack(1);
+		});
+
+		BENCH_LOOP("Deque - PushFront", 1'000'000, 1, {
+			deq.PushFront(1);
+		});
+		BENCH_LOOP("Deque - Foreach", 1'000, 2'000'000, {
+			for (int& i : deq)
+				i++;
+		});
+		BENCH_LOOP("Deque - PopBack", 1'000'000, 1, {
+			deq.PopBack();
+		});
+		BENCH_LOOP("Deque - Copy", 1'000, 1, {
+			Deque<int> copy = deq.Clone();
+		});
+		BENCH_LOOP("Deque - PopFront", 1'000'000, 1, {
+			deq.PopFront();
+		});
+	}
+	{
+		Deque<int> deq;
+		BENCH_LOOP("Deque - PushBack(200)/PopFront(100)", 100'000, 300, {
+			for (int i = 0; i < 200; i++)
+				deq.PushBack(1);
+
+			for (int i = 0; i < 100; i++)
+				deq.PopFront();
+		});
+	}
+	{
+		std::deque<int> deq;
+		BENCH_LOOP("std::deque - PushBack", 1'000'000, 1, {
+			deq.push_back(1);
+		});
+		BENCH_LOOP("std::deque - PushFront", 1'000'000, 1, {
+			deq.push_front(1);
+		});
+		BENCH_LOOP("std::deque - Foreach", 1'000, 2'000'000, {
+			for (int& i : deq)
+				i++;
+		});
+		BENCH_LOOP("std::deque - PopBack", 1'000'000, 1, {
+			deq.pop_back();
+		});
+		BENCH_LOOP("std::deque - Copy", 1'000, 1, {
+			std::deque<int> copy = deq;
+		});
+		BENCH_LOOP("std::deque - PopFront", 1'000'000, 1, {
+			deq.pop_front();
+		});
+	}
+	{
+		std::deque<int> deq;
+		BENCH_LOOP("std::deque - PushBack(200)/PopFront(100)", 100'000, 300, {
+			for (int i = 0; i < 200; i++)
+				deq.push_back(1);
+
+			for (int i = 0; i < 100; i++)
+				deq.pop_front();
+		});
 	}
 }
