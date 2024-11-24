@@ -218,4 +218,35 @@
     </Expand>
   </Type>
 
+  <Type Name="RexCore::StackBase&lt;*, *, *&gt;">
+    <DisplayString>{{Size={m_size}}}</DisplayString>
+
+    <Expand>
+      <Item Name="Size" ExcludeView="simple">m_size</Item>
+      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
+      <Item Name="Item Type" ExcludeView="simple">"$T2"</Item>
+      <Item Name="Index Type" ExcludeView="simple">"$T1"</Item>
+
+      <CustomListItems>
+        <Variable Name="i" InitialValue="0"/>
+        <Variable Name="chunk" InitialValue="m_currentChunk"/>
+        <Variable Name="posInChunk" InitialValue="m_indexInChunk"/>
+        <Variable Name="chunkSize" InitialValue="m_currentChunkSize"/>
+        <Loop Condition="i &lt; m_size">
+          <Item Condition="i == 0" Name="[Top]">chunk-&gt;data[posInChunk]</Item>
+          <Item Condition="i > 0" Name="[Top + {i}]">chunk-&gt;data[posInChunk]</Item>
+          <Exec>++i</Exec>
+          <If Condition="posInChunk == 0">
+            <Exec>chunk = chunk->previous</Exec>
+            <Exec>chunkSize = chunkSize / 2</Exec>
+            <Exec>posInChunk = chunkSize - 1</Exec>
+          </If>
+          <Else>
+            <Exec>posInChunk--</Exec>
+          </Else>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+
 </AutoVisualizer>
