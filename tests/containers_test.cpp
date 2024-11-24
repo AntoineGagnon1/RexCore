@@ -7,6 +7,7 @@
 #include <rexcore/containers/smart_ptrs.hpp>
 #include <rexcore/containers/function.hpp>
 #include <rexcore/containers/deque.hpp>
+#include <rexcore/containers/stack.hpp>
 #include <rexcore/math.hpp>
 #include <rexcore/time.hpp>
 
@@ -1776,4 +1777,76 @@ TEST_CASE("Containers/Deque")
 	// Test BigDeque with default and arena allocators
 	TestDeque<BigDeque<S64>>(DefaultAllocator{});
 	TestDeque<BigDeque<S64, ArenaAllocator>>(arena);
+}
+
+template<typename StackT>
+void TestStack(AllocatorRef<typename StackT::AllocatorType> allocator)
+{
+	using ValueType = typename StackT::ValueType;
+	using IndexType = typename StackT::IndexType;
+
+	StackT stack = StackT(allocator);
+
+	ASSERT(stack.IsEmpty());
+	ASSERT(stack.Size() == 0);
+
+	for (ValueType i = 0; i < 1024; ++i) {
+		stack.PushBack(i);
+		ASSERT(stack.Peek() == i);
+	}
+
+	for (ValueType i = 1024; i < 2048; ++i) {
+		stack.EmplaceBack(i);
+		ASSERT(stack.Peek() == i);
+	}
+
+	ASSERT(!stack.IsEmpty());
+	ASSERT(stack.Size() == 2048);
+
+	const StackT& constStack = stack;
+	ASSERT(constStack.Peek() == 2047);
+
+	StackT copy = stack.Clone();
+	ASSERT(copy.Size() == stack.Size());
+	for (ValueType i = 0; i < 2048; ++i) {
+		ASSERT(copy.PopBack() == 2047 - i);
+	}
+
+	for (ValueType i = 0; i < 1024; ++i) {
+		ASSERT(stack.PopBack() == 2047 - i);
+	}
+
+	stack.ShrinkToFit();
+	ASSERT(stack.Size() == 1024);
+
+	for (ValueType i = 0; i < 1024; ++i) {
+		ASSERT(stack.PopBack() == 1023 - i);
+	}
+
+	ASSERT(stack.IsEmpty());
+	ASSERT(stack.Size() == 0);
+
+	for (ValueType i = 0; i < 1024; ++i) {
+		stack.PushBack(i);
+		ASSERT(stack.Peek() == i);
+	}
+
+	stack.Clear();
+
+	ASSERT(stack.IsEmpty());
+	ASSERT(stack.Size() == 0);
+}
+
+TEST_CASE("Containers/Stack")
+{
+	ArenaAllocator arena;
+
+	TestStack<SmallStack<S64>>(DefaultAllocator{});
+	TestStack<SmallStack<S64, ArenaAllocator>>(arena);
+
+	TestStack<Stack<S64>>(DefaultAllocator{});
+	TestStack<Stack<S64, ArenaAllocator>>(arena);
+
+	TestStack<BigStack<S64>>(DefaultAllocator{});
+	TestStack<BigStack<S64, ArenaAllocator>>(arena);
 }
