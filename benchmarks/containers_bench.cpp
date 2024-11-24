@@ -8,6 +8,7 @@
 #include <rexcore/containers/set.hpp>
 #include <rexcore/containers/map.hpp>
 #include <rexcore/containers/deque.hpp>
+#include <rexcore/containers/stack.hpp>
 
 #include <vector>
 #include <memory>
@@ -15,6 +16,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <deque>
+#include <stack>
 
 using namespace RexCore;
 
@@ -278,6 +280,64 @@ BENCHMARK("Containers/Deque")
 
 			for (int i = 0; i < 100; i++)
 				deq.pop_front();
+		});
+	}
+}
+
+BENCHMARK("Containers/Stack")
+{
+	{
+		Stack<int> stack;
+		BENCH_LOOP("Stack - PushBack", 1'000'000, 1, {
+			stack.PushBack(1);
+		});
+		int total = 0;
+		BENCH_LOOP("Stack - Peek", 1'000'000, 1, {
+			total += stack.Peek();
+		});
+		printf("    Total: %d\n", total);
+		BENCH_LOOP("Stack - Copy", 1'000, 1, {
+			Stack<int> copy = stack.Clone();
+		});
+		BENCH_LOOP("Stack - PopBack", 1'000'000, 1, {
+			[[maybe_unused]] auto v = stack.PopBack();
+		});
+	}
+	{
+		Stack<int> stack;
+		BENCH_LOOP("Stack - PushBack(200)/PopBack(100)", 100'000, 300, {
+			for (int i = 0; i < 200; i++)
+				stack.PushBack(1);
+
+			for (int i = 0; i < 100; i++)
+				[[maybe_unused]] auto v = stack.PopBack();
+		});
+	}
+	{
+		std::stack<int> stack;
+		BENCH_LOOP("std::stack - PushBack", 1'000'000, 1, {
+			stack.push(1);
+		});
+		int total = 0;
+		BENCH_LOOP("std::stack - Peek", 1'000'000, 1, {
+			total += stack.top();
+		});
+		printf("    Total: %d\n", total);
+		BENCH_LOOP("std::stack - Copy", 1'000, 1, {
+			std::stack<int> copy = stack;
+		});
+		BENCH_LOOP("std::stack - PopBack", 1'000'000, 1, {
+			stack.pop();
+		});
+	}
+	{
+		std::stack<int> stack;
+		BENCH_LOOP("std::stack - PushBack(200)/PopBack(100)", 100'000, 300, {
+			for (int i = 0; i < 200; i++)
+				stack.push(1);
+
+			for (int i = 0; i < 100; i++)
+				stack.pop();
 		});
 	}
 }
