@@ -106,6 +106,7 @@ namespace RexCore
 		[[nodiscard]] constexpr bool IsEmpty() const { return m_size == 0; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
 		[[nodiscard]] constexpr IndexT Capacity() const { return m_capacity; }
+		[[nodiscard]] constexpr AllocatorRef<Allocator> GetAllocator() const { return m_allocator; }
 
 		[[nodiscard]] constexpr decltype(auto) First(this auto&& self)
 		{
