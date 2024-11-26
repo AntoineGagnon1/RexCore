@@ -15,13 +15,13 @@ namespace RexCore
 
 		REX_CORE_NO_COPY(UniquePtr);
 		
-		UniquePtr(UniquePtr&& other) noexcept
+		constexpr UniquePtr(UniquePtr&& other) noexcept
 			: m_ptr(other.m_ptr)
 		{
 			other.m_ptr = nullptr;
 		}
 
-		UniquePtr& operator=(UniquePtr&& other) noexcept
+		constexpr UniquePtr& operator=(UniquePtr&& other) noexcept
 		{
 			if (this != &other)
 			{
@@ -31,27 +31,27 @@ namespace RexCore
 			return *this;
 		}
 
-		explicit UniquePtr(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+		explicit constexpr UniquePtr(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 			: m_allocator(allocator)
 			, m_ptr(nullptr)
 		{
 		}
 
 		// Warning : ptr must have been allocated with the same allocator
-		explicit UniquePtr(PtrType ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+		explicit constexpr UniquePtr(PtrType ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 			: m_allocator(allocator)
 			, m_ptr(ptr)
 		{
 		}
 
-		~UniquePtr()
+		constexpr ~UniquePtr()
 		{
 			Free();
 		}
 
-		[[nodiscard]] bool IsEmpty() const { return m_ptr == nullptr; }
+		[[nodiscard]] constexpr bool IsEmpty() const { return m_ptr == nullptr; }
 
-		[[nodiscard]] UniquePtr Clone() const
+		[[nodiscard]] constexpr UniquePtr Clone() const
 		{
 			static_assert(IClonable<T>, "The inner type must be IClonable in order to clone a UniquePtr");
 			if (m_ptr == nullptr)
@@ -64,7 +64,7 @@ namespace RexCore
 			}
 		}
 
-		void Free()
+		constexpr void Free()
 		{
 			if (m_ptr)
 			{
@@ -74,24 +74,24 @@ namespace RexCore
 		}
 
 		// Warning : ptr must have been allocated with the same allocator
-		void Assign(PtrType ptr) noexcept
+		constexpr void Assign(PtrType ptr) noexcept
 		{
 			Free();
 			m_ptr = ptr;
 		}
 
-		[[nodiscard]] AllocatorRef<Allocator> GetAllocator() const noexcept { return m_allocator; }
+		[[nodiscard]] constexpr AllocatorRef<Allocator> GetAllocator() const noexcept { return m_allocator; }
 
-		[[nodiscard]] const PtrType Get() const noexcept { return m_ptr; }
-		[[nodiscard]] PtrType Get() noexcept { return m_ptr; }
+		[[nodiscard]] constexpr const PtrType Get() const noexcept { return m_ptr; }
+		[[nodiscard]] constexpr PtrType Get() noexcept { return m_ptr; }
 
-		[[nodiscard]] const PtrType operator->() const noexcept { return m_ptr; }
-		[[nodiscard]] PtrType operator->() noexcept { return m_ptr; }
+		[[nodiscard]] constexpr const PtrType operator->() const noexcept { return m_ptr; }
+		[[nodiscard]] constexpr PtrType operator->() noexcept { return m_ptr; }
 
-		[[nodiscard]] const T& operator*() const noexcept { return *m_ptr; }
-		[[nodiscard]] T& operator*() noexcept { return *m_ptr; }
+		[[nodiscard]] constexpr const T& operator*() const noexcept { return *m_ptr; }
+		[[nodiscard]] constexpr T& operator*() noexcept { return *m_ptr; }
 
-		[[nodiscard]] explicit operator bool() const noexcept { return m_ptr != nullptr; }
+		[[nodiscard]] explicit constexpr operator bool() const noexcept { return m_ptr != nullptr; }
 
 	private:
 		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
@@ -99,7 +99,7 @@ namespace RexCore
 	};
 
 	template<typename T, IAllocator Allocator, typename ...Args>
-	UniquePtr<T, Allocator> AllocateUnique(AllocatorRef<Allocator> allocator, Args&&... args)
+	constexpr UniquePtr<T, Allocator> AllocateUnique(AllocatorRef<Allocator> allocator, Args&&... args)
 	{
 		T* ptr = reinterpret_cast<T*>(allocator.Allocate(sizeof(T), alignof(T)));
 		new (ptr) T(std::forward<Args>(args)...);
@@ -107,7 +107,7 @@ namespace RexCore
 	}
 
 	template<typename T, typename ...Args>
-	UniquePtr<T, DefaultAllocator> MakeUnique(Args&&... args)
+	constexpr UniquePtr<T, DefaultAllocator> MakeUnique(Args&&... args)
 	{
 		return AllocateUnique<T, DefaultAllocator, Args...>(DefaultAllocator{}, std::forward<Args>(args)...);
 	}
@@ -121,7 +121,7 @@ namespace RexCore
 			U64 weakRefCount; // + 1 for all the refCounts
 			Function<void(void* objPtr, void* controlBlockPtr)> deallocate;
 
-			SharedPtrControlBlock(U64 count, U64 weakCount, Function<void(void*, void*)> deallocate)
+			constexpr SharedPtrControlBlock(U64 count, U64 weakCount, Function<void(void*, void*)> deallocate)
 				: refCount(count), weakRefCount(weakCount), deallocate(std::move(deallocate))
 			{}
 		};
@@ -138,12 +138,12 @@ namespace RexCore
 		using ValueType = T;
 		using PtrType = T*;
 
-		WeakPtr()
+		constexpr WeakPtr()
 			: m_ptr(nullptr)
 			, m_controlBlock(nullptr)
 		{}
 
-		WeakPtr(const WeakPtr<T>& other)
+		constexpr WeakPtr(const WeakPtr<T>& other)
 			: m_ptr(other.m_ptr)
 			, m_controlBlock(other.m_controlBlock)
 		{
@@ -151,7 +151,7 @@ namespace RexCore
 				m_controlBlock->weakRefCount += 1;
 		}
 
-		WeakPtr(WeakPtr&& other) noexcept
+		constexpr WeakPtr(WeakPtr&& other) noexcept
 			: m_ptr(other.m_ptr)
 			, m_controlBlock(other.m_controlBlock)
 		{
@@ -159,7 +159,7 @@ namespace RexCore
 			other.m_controlBlock = nullptr;
 		}
 
-		WeakPtr& operator=(WeakPtr&& other) noexcept
+		constexpr WeakPtr& operator=(WeakPtr&& other) noexcept
 		{
 			if (this != &other)
 			{
@@ -171,20 +171,20 @@ namespace RexCore
 			return *this;
 		}
 
-		WeakPtr& operator=(const WeakPtr& other) noexcept
+		constexpr WeakPtr& operator=(const WeakPtr& other) noexcept
 		{
 			WeakPtr copy(other);
 			Swap(copy);
 			return *this;
 		}
 
-		void Swap(WeakPtr& other) noexcept
+		constexpr void Swap(WeakPtr& other) noexcept
 		{
 			std::swap(m_ptr, other.m_ptr);
 			std::swap(m_controlBlock, other.m_controlBlock);
 		}
 
-		~WeakPtr()
+		constexpr ~WeakPtr()
 		{
 			if (m_controlBlock)
 			{
@@ -202,13 +202,13 @@ namespace RexCore
 		}
 
 
-		[[nodiscard]] SharedPtr<T> Lock() const;
+		[[nodiscard]] constexpr SharedPtr<T> Lock() const;
 
-		[[nodiscard]] explicit operator bool() const noexcept { return !IsEmpty(); }
+		[[nodiscard]] explicit constexpr operator bool() const noexcept { return !IsEmpty(); }
 
-		[[nodiscard]] bool IsEmpty() const noexcept { return m_ptr == nullptr || m_controlBlock->refCount == 0; }
+		[[nodiscard]] constexpr bool IsEmpty() const noexcept { return m_ptr == nullptr || m_controlBlock->refCount == 0; }
 	private:
-		WeakPtr(Internal::SharedPtrControlBlock* controlBlock, PtrType ptr)
+		constexpr WeakPtr(Internal::SharedPtrControlBlock* controlBlock, PtrType ptr)
 			: m_controlBlock(controlBlock)
 			, m_ptr(ptr)
 		{
@@ -234,7 +234,7 @@ namespace RexCore
 		using ValueType = T;
 		using PtrType = T*;
 
-		SharedPtr(SharedPtr&& other) noexcept
+		constexpr SharedPtr(SharedPtr&& other) noexcept
 			: m_controlBlock(other.m_controlBlock)
 			, m_ptr(other.m_ptr)
 		{
@@ -242,7 +242,7 @@ namespace RexCore
 			other.m_ptr = nullptr;
 		}
 
-		SharedPtr(const SharedPtr& other) noexcept
+		constexpr SharedPtr(const SharedPtr& other) noexcept
 			: m_ptr(other.m_ptr)
 			, m_controlBlock(other.m_controlBlock)
 		{
@@ -250,17 +250,17 @@ namespace RexCore
 				m_controlBlock->refCount += 1;
 		}
 
-		SharedPtr()
+		constexpr SharedPtr()
 			: m_controlBlock(nullptr)
 			, m_ptr(nullptr)
 		{}
 
-		~SharedPtr()
+		constexpr ~SharedPtr()
 		{
 			Release();
 		}
 
-		SharedPtr& operator=(SharedPtr&& other) noexcept
+		constexpr SharedPtr& operator=(SharedPtr&& other) noexcept
 		{
 			if (this != &other)
 			{
@@ -272,20 +272,20 @@ namespace RexCore
 			return *this;
 		}
 
-		SharedPtr& operator=(const SharedPtr& other) noexcept
+		constexpr SharedPtr& operator=(const SharedPtr& other) noexcept
 		{
 			SharedPtr copy(other);
 			Swap(copy);
 			return *this;
 		}
 
-		void Swap(SharedPtr& other)
+		constexpr void Swap(SharedPtr& other)
 		{
 			std::swap(m_controlBlock, other.m_controlBlock);
 			std::swap(m_ptr, other.m_ptr);
 		}
 
-		void Release()
+		constexpr void Release()
 		{
 			if (m_controlBlock)
 			{
@@ -306,12 +306,12 @@ namespace RexCore
 			m_controlBlock = nullptr;
 		}
 
-		[[nodiscard]] bool IsEmpty() const { return m_ptr == nullptr; }
+		[[nodiscard]] constexpr bool IsEmpty() const { return m_ptr == nullptr; }
 
 		// Warning : will make an extra allocation for the control block
 		// Warning : ptr must have been allocated with [allocator]
 		template<IAllocator Allocator>
-		void Assign(PtrType ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
+		constexpr void Assign(PtrType ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
 		{
 			Release();
 			
@@ -328,24 +328,24 @@ namespace RexCore
 			}
 		}
 
-		[[nodiscard]] WeakPtr<T> GetWeak() const
+		[[nodiscard]] constexpr WeakPtr<T> GetWeak() const
 		{
 			return WeakPtr<T>(m_controlBlock, m_ptr);
 		}
 
-		[[nodiscard]] const PtrType Get() const noexcept { return m_ptr; }
-		[[nodiscard]] PtrType Get() noexcept { return m_ptr; }
+		[[nodiscard]] constexpr const PtrType Get() const noexcept { return m_ptr; }
+		[[nodiscard]] constexpr PtrType Get() noexcept { return m_ptr; }
 
-		[[nodiscard]] const PtrType operator->() const noexcept { return m_ptr; }
-		[[nodiscard]] PtrType operator->() noexcept { return m_ptr; }
+		[[nodiscard]] constexpr const PtrType operator->() const noexcept { return m_ptr; }
+		[[nodiscard]] constexpr PtrType operator->() noexcept { return m_ptr; }
 
-		[[nodiscard]] const T& operator*() const noexcept { return *m_ptr; }
-		[[nodiscard]] T& operator*() noexcept { return *m_ptr; }
+		[[nodiscard]] constexpr const T& operator*() const noexcept { return *m_ptr; }
+		[[nodiscard]] constexpr T& operator*() noexcept { return *m_ptr; }
 
-		[[nodiscard]] explicit operator bool() const noexcept { return m_ptr != nullptr; }
+		[[nodiscard]] explicit constexpr operator bool() const noexcept { return m_ptr != nullptr; }
 
-		[[nodiscard]] U64 NumRefs() const noexcept { return m_controlBlock ? m_controlBlock->refCount : 0; }
-		[[nodiscard]] U64 NumWeakRefs() const noexcept { 
+		[[nodiscard]] constexpr U64 NumRefs() const noexcept { return m_controlBlock ? m_controlBlock->refCount : 0; }
+		[[nodiscard]] constexpr U64 NumWeakRefs() const noexcept {
 			if (!m_controlBlock)
 				return 0;
 			return m_controlBlock->refCount >= 1 ? m_controlBlock->weakRefCount - 1 : m_controlBlock->weakRefCount;
@@ -355,9 +355,9 @@ namespace RexCore
 		friend class WeakPtr<T>;
 
 		template<typename T2, IAllocator Allocator, typename ...Args>
-		friend SharedPtr<T2> AllocateShared(AllocatorRef<Allocator> allocator, Args&& ...args);
+		friend constexpr SharedPtr<T2> AllocateShared(AllocatorRef<Allocator> allocator, Args&& ...args);
 
-		SharedPtr(PtrType ptr, Internal::SharedPtrControlBlock* controlBlock)
+		constexpr SharedPtr(PtrType ptr, Internal::SharedPtrControlBlock* controlBlock)
 			: m_controlBlock(controlBlock)
 			, m_ptr(ptr)
 		{
@@ -370,7 +370,7 @@ namespace RexCore
 	};
 
 	template<typename T>
-	[[nodiscard]] SharedPtr<T> WeakPtr<T>::Lock() const
+	[[nodiscard]] constexpr SharedPtr<T> WeakPtr<T>::Lock() const
 	{
 		return SharedPtr<T>(m_ptr, m_controlBlock);
 	}
@@ -378,7 +378,7 @@ namespace RexCore
 	// Warning : will make an extra allocation for the control block
 	// Warning : ptr must have been allocated with [allocator]
 	template<typename T, IAllocator Allocator>
-	[[nodiscard]] SharedPtr<T> MakeSharedFromPtr(T* ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+	[[nodiscard]] constexpr SharedPtr<T> MakeSharedFromPtr(T* ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 	{
 		SharedPtr<T> sharedPtr;
 		sharedPtr.Assign<Allocator>(ptr, allocator);
@@ -386,7 +386,7 @@ namespace RexCore
 	}
 
 	template<typename T, IAllocator Allocator, typename ...Args>
-	[[nodiscard]] SharedPtr<T> AllocateShared(AllocatorRef<Allocator> allocator, Args&& ...args)
+	[[nodiscard]] constexpr SharedPtr<T> AllocateShared(AllocatorRef<Allocator> allocator, Args&& ...args)
 	{
 		struct DataAndControl
 		{
@@ -421,7 +421,7 @@ namespace RexCore
 	}
 
 	template<typename T, typename ...Args>
-	[[nodiscard]] SharedPtr<T> MakeShared(Args&& ...args)
+	[[nodiscard]] constexpr SharedPtr<T> MakeShared(Args&& ...args)
 	{
 		return AllocateShared<T, DefaultAllocator, Args...>(DefaultAllocator{}, std::forward<Args>(args)...);
 	}
@@ -434,7 +434,7 @@ namespace RexCore
 			std::atomic_uint64_t weakRefCount; // + 1 for all the refCounts
 			Function<void(void* objPtr, void* controlBlockPtr)> deallocate;
 
-			AtomicSharedPtrControlBlock(U64 count, U64 weakCount, Function<void(void*, void*)> deallocate)
+			constexpr AtomicSharedPtrControlBlock(U64 count, U64 weakCount, Function<void(void*, void*)> deallocate)
 				: refCount(count), weakRefCount(weakCount), deallocate(std::move(deallocate))
 			{}
 		};
@@ -451,12 +451,12 @@ namespace RexCore
 		using ValueType = T;
 		using PtrType = T*;
 
-		AtomicWeakPtr()
+		constexpr AtomicWeakPtr()
 			: m_ptr(nullptr)
 			, m_controlBlock(nullptr)
 		{}
 
-		AtomicWeakPtr(const AtomicWeakPtr<T>& other)
+		constexpr AtomicWeakPtr(const AtomicWeakPtr<T>& other)
 			: m_ptr(other.m_ptr)
 			, m_controlBlock(other.m_controlBlock)
 		{
@@ -464,7 +464,7 @@ namespace RexCore
 				m_controlBlock->weakRefCount += 1;
 		}
 
-		AtomicWeakPtr(AtomicWeakPtr&& other) noexcept
+		constexpr AtomicWeakPtr(AtomicWeakPtr&& other) noexcept
 			: m_ptr(other.m_ptr)
 			, m_controlBlock(other.m_controlBlock)
 		{
@@ -472,7 +472,7 @@ namespace RexCore
 			other.m_controlBlock = nullptr;
 		}
 
-		AtomicWeakPtr& operator=(AtomicWeakPtr&& other) noexcept
+		constexpr AtomicWeakPtr& operator=(AtomicWeakPtr&& other) noexcept
 		{
 			if (this != &other)
 			{
@@ -484,20 +484,20 @@ namespace RexCore
 			return *this;
 		}
 
-		AtomicWeakPtr& operator=(const AtomicWeakPtr& other) noexcept
+		constexpr AtomicWeakPtr& operator=(const AtomicWeakPtr& other) noexcept
 		{
 			AtomicWeakPtr copy(other);
 			Swap(copy);
 			return *this;
 		}
 
-		void Swap(AtomicWeakPtr& other) noexcept
+		constexpr void Swap(AtomicWeakPtr& other) noexcept
 		{
 			std::swap(m_ptr, other.m_ptr);
 			std::swap(m_controlBlock, other.m_controlBlock);
 		}
 
-		~AtomicWeakPtr()
+		constexpr ~AtomicWeakPtr()
 		{
 			if (m_controlBlock)
 			{
@@ -514,13 +514,13 @@ namespace RexCore
 		}
 
 
-		[[nodiscard]] AtomicSharedPtr<T> Lock() const;
+		[[nodiscard]] constexpr AtomicSharedPtr<T> Lock() const;
 
-		[[nodiscard]] explicit operator bool() const noexcept { return !IsEmpty(); }
+		[[nodiscard]] explicit constexpr operator bool() const noexcept { return !IsEmpty(); }
 
-		[[nodiscard]] bool IsEmpty() const noexcept { return m_ptr == nullptr || m_controlBlock->refCount == 0; }
+		[[nodiscard]] constexpr bool IsEmpty() const noexcept { return m_ptr == nullptr || m_controlBlock->refCount == 0; }
 	private:
-		AtomicWeakPtr(Internal::AtomicSharedPtrControlBlock* controlBlock, PtrType ptr)
+		constexpr AtomicWeakPtr(Internal::AtomicSharedPtrControlBlock* controlBlock, PtrType ptr)
 			: m_controlBlock(controlBlock)
 			, m_ptr(ptr)
 		{
@@ -546,7 +546,7 @@ namespace RexCore
 		using ValueType = T;
 		using PtrType = T*;
 
-		AtomicSharedPtr(AtomicSharedPtr&& other) noexcept
+		constexpr AtomicSharedPtr(AtomicSharedPtr&& other) noexcept
 			: m_controlBlock(other.m_controlBlock)
 			, m_ptr(other.m_ptr)
 		{
@@ -554,7 +554,7 @@ namespace RexCore
 			other.m_ptr = nullptr;
 		}
 
-		AtomicSharedPtr(const AtomicSharedPtr& other) noexcept
+		constexpr AtomicSharedPtr(const AtomicSharedPtr& other) noexcept
 			: m_ptr(other.m_ptr)
 			, m_controlBlock(other.m_controlBlock)
 		{
@@ -562,17 +562,17 @@ namespace RexCore
 				m_controlBlock->refCount++;
 		}
 
-		AtomicSharedPtr()
+		constexpr AtomicSharedPtr()
 			: m_controlBlock(nullptr)
 			, m_ptr(nullptr)
 		{}
 
-		~AtomicSharedPtr()
+		constexpr ~AtomicSharedPtr()
 		{
 			Release();
 		}
 
-		AtomicSharedPtr& operator=(AtomicSharedPtr&& other) noexcept
+		constexpr AtomicSharedPtr& operator=(AtomicSharedPtr&& other) noexcept
 		{
 			if (this != &other)
 			{
@@ -584,20 +584,20 @@ namespace RexCore
 			return *this;
 		}
 
-		AtomicSharedPtr& operator=(const AtomicSharedPtr& other) noexcept
+		constexpr AtomicSharedPtr& operator=(const AtomicSharedPtr& other) noexcept
 		{
 			AtomicSharedPtr copy(other);
 			Swap(copy);
 			return *this;
 		}
 
-		void Swap(AtomicSharedPtr& other)
+		constexpr void Swap(AtomicSharedPtr& other)
 		{
 			std::swap(m_controlBlock, other.m_controlBlock);
 			std::swap(m_ptr, other.m_ptr);
 		}
 
-		void Release()
+		constexpr void Release()
 		{
 			if (m_controlBlock)
 			{
@@ -615,12 +615,12 @@ namespace RexCore
 			m_controlBlock = nullptr;
 		}
 
-		[[nodiscard]] bool IsEmpty() const { return m_ptr == nullptr; }
+		[[nodiscard]] constexpr bool IsEmpty() const { return m_ptr == nullptr; }
 
 		// Warning : will make an extra allocation for the control block
 		// Warning : ptr must have been allocated with [allocator]
 		template<IAllocator Allocator>
-		void Assign(PtrType ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
+		constexpr void Assign(PtrType ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
 		{
 			Release();
 
@@ -637,26 +637,26 @@ namespace RexCore
 			}
 		}
 
-		[[nodiscard]] AtomicWeakPtr<T> GetWeak() const
+		[[nodiscard]] constexpr AtomicWeakPtr<T> GetWeak() const
 		{
 			return AtomicWeakPtr<T>(m_controlBlock, m_ptr);
 		}
 
-		[[nodiscard]] const PtrType Get() const noexcept { return m_ptr; }
-		[[nodiscard]] PtrType Get() noexcept { return m_ptr; }
+		[[nodiscard]] constexpr const PtrType Get() const noexcept { return m_ptr; }
+		[[nodiscard]] constexpr PtrType Get() noexcept { return m_ptr; }
 
-		[[nodiscard]] const PtrType operator->() const noexcept { return m_ptr; }
-		[[nodiscard]] PtrType operator->() noexcept { return m_ptr; }
+		[[nodiscard]] constexpr const PtrType operator->() const noexcept { return m_ptr; }
+		[[nodiscard]] constexpr PtrType operator->() noexcept { return m_ptr; }
 
-		[[nodiscard]] const T& operator*() const noexcept { return *m_ptr; }
-		[[nodiscard]] T& operator*() noexcept { return *m_ptr; }
+		[[nodiscard]] constexpr const T& operator*() const noexcept { return *m_ptr; }
+		[[nodiscard]] constexpr T& operator*() noexcept { return *m_ptr; }
 
-		[[nodiscard]] explicit operator bool() const noexcept { return m_ptr != nullptr; }
+		[[nodiscard]] explicit constexpr operator bool() const noexcept { return m_ptr != nullptr; }
 
-		[[nodiscard]] U64 NumRefs() const noexcept { return m_controlBlock ? (U64)m_controlBlock->refCount : 0ull; }
+		[[nodiscard]] constexpr U64 NumRefs() const noexcept { return m_controlBlock ? (U64)m_controlBlock->refCount : 0ull; }
 
 		// Warning : this is not thread safe, don't depend on the result
-		[[nodiscard]] U64 NumWeakRefs() const noexcept {
+		[[nodiscard]] constexpr U64 NumWeakRefs() const noexcept {
 			if (!m_controlBlock)
 				return 0;
 
@@ -670,9 +670,9 @@ namespace RexCore
 		friend class AtomicWeakPtr<T>;
 
 		template<typename T2, IAllocator Allocator, typename ...Args>
-		friend AtomicSharedPtr<T2> AllocateAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args);
+		friend constexpr AtomicSharedPtr<T2> AllocateAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args);
 
-		AtomicSharedPtr(PtrType ptr, Internal::AtomicSharedPtrControlBlock* controlBlock)
+		constexpr AtomicSharedPtr(PtrType ptr, Internal::AtomicSharedPtrControlBlock* controlBlock)
 			: m_controlBlock(controlBlock)
 			, m_ptr(ptr)
 		{
@@ -685,7 +685,7 @@ namespace RexCore
 	};
 
 	template<typename T>
-	[[nodiscard]] AtomicSharedPtr<T> AtomicWeakPtr<T>::Lock() const
+	[[nodiscard]] constexpr AtomicSharedPtr<T> AtomicWeakPtr<T>::Lock() const
 	{
 		return AtomicSharedPtr<T>(m_ptr, m_controlBlock);
 	}
@@ -693,7 +693,7 @@ namespace RexCore
 	// Warning : will make an extra allocation for the control block
 	// Warning : ptr must have been allocated with [allocator]
 	template<typename T, IAllocator Allocator>
-	[[nodiscard]] AtomicSharedPtr<T> MakeAtomicSharedFromPtr(T* ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+	[[nodiscard]] constexpr AtomicSharedPtr<T> MakeAtomicSharedFromPtr(T* ptr, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 	{
 		AtomicSharedPtr<T> sharedPtr;
 		sharedPtr.Assign<Allocator>(ptr, allocator);
@@ -701,7 +701,7 @@ namespace RexCore
 	}
 
 	template<typename T, IAllocator Allocator, typename ...Args>
-	[[nodiscard]] AtomicSharedPtr<T> AllocateAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args)
+	[[nodiscard]] constexpr AtomicSharedPtr<T> AllocateAtomicShared(AllocatorRef<Allocator> allocator, Args&& ...args)
 	{
 		struct DataAndControl
 		{
@@ -736,7 +736,7 @@ namespace RexCore
 	}
 
 	template<typename T, typename ...Args>
-	[[nodiscard]] AtomicSharedPtr<T> MakeAtomicShared(Args&& ...args)
+	[[nodiscard]] constexpr AtomicSharedPtr<T> MakeAtomicShared(Args&& ...args)
 	{
 		return AllocateAtomicShared<T, DefaultAllocator, Args...>(DefaultAllocator{}, std::forward<Args>(args)...);
 	}

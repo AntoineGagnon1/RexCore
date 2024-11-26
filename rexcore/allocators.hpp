@@ -62,7 +62,7 @@ namespace RexCore
 #else
 	struct AllocSourceLocation
 	{
-		static AllocSourceLocation current() noexcept { return {}; }
+		static consteval AllocSourceLocation current() noexcept { return {}; }
 	};
 
 	inline void TrackAlloc([[maybe_unused]] void* ptr, [[maybe_unused]] U64 size, [[maybe_unused]] AllocSourceLocation loc) {}

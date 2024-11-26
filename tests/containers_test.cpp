@@ -1850,3 +1850,23 @@ TEST_CASE("Containers/Stack")
 	TestStack<BigStack<S64>>(DefaultAllocator{});
 	TestStack<BigStack<S64, ArenaAllocator>>(arena);
 }
+
+TEST_CASE("Containers/ConstInit")
+{
+	constinit static Deque<U32> deque;
+	//constinit static Function<void()> function; // https://en.cppreference.com/w/cpp/memory/construct_at
+	//constinit static HashMap<U32, U32> hashMap;
+	//constinit static HashSet<U32> hashSet;
+	constinit static UniquePtr<U32> uniquePtr;
+	constinit static SharedPtr<U32> sharedPtr;
+	constinit static AtomicSharedPtr<U32> atomicSharedPtr;
+	constinit static Span<U32> span;
+	constinit static Stack<U32> stack;
+	constinit static String<> string;
+	constinit static WString<> wstring;
+	constinit static InplaceString<32> inplaceString;
+	constinit static InplaceWString<32> inplaceWString;
+	constinit static Vector<U32> vector;
+	constinit static InplaceVector<U32, 32> inplaceVector;
+	constinit static FixedVector<U32, 32> fixedVector;
+}

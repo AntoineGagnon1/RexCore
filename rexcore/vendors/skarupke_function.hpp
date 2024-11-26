@@ -398,26 +398,26 @@ namespace func
 		: public detail::typedeffer<Result, Arguments...>
 	{
 	public:
-		function() FUNC_NOEXCEPT
+		constexpr function() FUNC_NOEXCEPT
 		{
 			initialize_empty();
 		}
-		function(std::nullptr_t) FUNC_NOEXCEPT
+		constexpr function(std::nullptr_t) FUNC_NOEXCEPT
 		{
 			initialize_empty();
 		}
-		function(function&& other) FUNC_NOEXCEPT
+		constexpr function(function&& other) FUNC_NOEXCEPT
 		{
 			initialize_empty();
 			swap(other);
 		}
-		function(const function& other)
+		constexpr function(const function& other)
 			: call(other.call)
 		{
 			other.manager_storage.manager->call_copy(manager_storage, other.manager_storage);
 		}
 		template<typename T>
-		function(T functor,
+		constexpr function(T functor,
 			typename std::enable_if<detail::is_valid_function_argument<T, Result(Arguments...)>::value, detail::empty_struct>::type = detail::empty_struct()) FUNC_TEMPLATE_NOEXCEPT(T, std::allocator<typename detail::functor_type<T>::type>)
 		{
 			if (detail::is_null(functor))
@@ -431,19 +431,19 @@ namespace func
 			}
 		}
 		template<typename Allocator>
-		function(std::allocator_arg_t, const Allocator&)
+		constexpr function(std::allocator_arg_t, const Allocator&)
 		{
 			// ignore the allocator because I don't allocate
 			initialize_empty();
 		}
 		template<typename Allocator>
-		function(std::allocator_arg_t, const Allocator&, std::nullptr_t)
+		constexpr function(std::allocator_arg_t, const Allocator&, std::nullptr_t)
 		{
 			// ignore the allocator because I don't allocate
 			initialize_empty();
 		}
 		template<typename Allocator, typename T>
-		function(std::allocator_arg_t, const Allocator& allocator, T functor,
+		constexpr function(std::allocator_arg_t, const Allocator& allocator, T functor,
 			typename std::enable_if<detail::is_valid_function_argument<T, Result(Arguments...)>::value, detail::empty_struct>::type = detail::empty_struct())
 			FUNC_TEMPLATE_NOEXCEPT(T, Allocator)
 		{
@@ -457,7 +457,7 @@ namespace func
 			}
 		}
 		template<typename Allocator>
-		function(std::allocator_arg_t, const Allocator& allocator, const function& other)
+		constexpr function(std::allocator_arg_t, const Allocator& allocator, const function& other)
 			: call(other.call)
 		{
 			typedef typename std::allocator_traits<Allocator>::template rebind_alloc<function> MyAllocator;
@@ -488,19 +488,19 @@ namespace func
 			}
 		}
 		template<typename Allocator>
-		function(std::allocator_arg_t, const Allocator&, function&& other) FUNC_NOEXCEPT
+		constexpr function(std::allocator_arg_t, const Allocator&, function&& other) FUNC_NOEXCEPT
 		{
 			// ignore the allocator because I don't allocate
 			initialize_empty();
 			swap(other);
 		}
 
-		function& operator=(function other) FUNC_NOEXCEPT
+		constexpr function& operator=(function other) FUNC_NOEXCEPT
 		{
 			swap(other);
 			return *this;
 		}
-		~function() FUNC_NOEXCEPT
+		constexpr ~function() FUNC_NOEXCEPT
 		{
 			manager_storage.manager->call_destroy(manager_storage);
 		}

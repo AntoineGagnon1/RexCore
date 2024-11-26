@@ -20,17 +20,17 @@ namespace RexCore
 		REX_CORE_NO_COPY(Function);
 		REX_CORE_DEFAULT_MOVE(Function);
 
-		Function() noexcept = default;
-		Function(std::nullptr_t) noexcept : Impl(nullptr) {}
+		constexpr Function() noexcept = default;
+		constexpr Function(std::nullptr_t) noexcept : Impl(nullptr) {}
 		
-		Function Clone() const
+		constexpr Function Clone() const
 		{
 			return Function(*static_cast<const Impl*>(this));
 		}
 
 		template<typename T>
 			requires func::detail::is_valid_function_argument<T, R(Args...)>::value
-		Function(T functor)
+		constexpr Function(T functor)
 			: Impl(std::move(functor))
 		{
 			static_assert(std::is_invocable_r_v<R, T, Args...>, "Invalid functor type");
@@ -39,7 +39,7 @@ namespace RexCore
 
 		template<IAllocator Allocator, typename T>
 			requires func::detail::is_valid_function_argument<T, R(Args...)>::value
-		static Function Allocate(T functor, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+		constexpr static Function Allocate(T functor, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
 		{
 			StdAllocatorAdaptor<T, Allocator> stdAllocator(allocator);
 			return Function(std::move(functor), stdAllocator);
@@ -49,10 +49,10 @@ namespace RexCore
 		using Impl::operator bool;
 
 	private:
-		Function(const Impl& impl) : Impl(impl) {}
+		constexpr Function(const Impl& impl) : Impl(impl) {}
 
 		template<typename T, typename Allocator>
-		Function(T functor, const Allocator& allocator)
+		constexpr Function(T functor, const Allocator& allocator)
 			: Impl(std::allocator_arg_t{}, allocator, std::move(functor))
 		{}
 	};

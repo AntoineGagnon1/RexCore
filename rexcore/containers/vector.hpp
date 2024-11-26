@@ -6,6 +6,7 @@
 #include <rexcore/containers/span.hpp>
 
 #include <iterator>
+#include <bit>
 
 namespace RexCore
 {
@@ -377,7 +378,7 @@ namespace RexCore
 				for (IndexT i = 0; i < m_size; i++)
 					newData[i] = std::move(m_data[i]);
 
-				if (m_data != GetInplaceData())
+				if (m_data != m_inplaceData)
 					m_allocator.Free(m_data, m_capacity * sizeof(T));
 			}
 			m_data = newData;
@@ -393,7 +394,7 @@ namespace RexCore
 			}
 			else if (newSize < m_size)
 			{
-				if (m_data == GetInplaceData())
+				if (m_data == m_inplaceData)
 				{
 					for (IndexT i = newSize; i < m_size; i++)
 						m_data[i].~T();
@@ -402,7 +403,7 @@ namespace RexCore
 				}
 				else
 				{
-					T* newData = newSize <= InplaceSize ? GetInplaceData() : static_cast<T*>(m_allocator.Allocate(newSize * sizeof(T), alignof(T)));
+					T* newData = newSize <= InplaceSize ? m_inplaceData : static_cast<T*>(m_allocator.Allocate(newSize * sizeof(T), alignof(T)));
 					for (IndexT i = 0; i < newSize; i++)
 						newData[i] = std::move(m_data[i]);
 
@@ -428,10 +429,10 @@ namespace RexCore
 		constexpr void Free()
 		{
 			Base::Clear();
-			if (m_data != nullptr && m_data != GetInplaceData())
+			if (m_data != nullptr && m_data != m_inplaceData)
 			{
 				m_allocator.Free(m_data, m_capacity * sizeof(T));
-				m_data = GetInplaceData();
+				m_data = m_inplaceData;
 				m_capacity = InplaceSize;
 			}
 		}
@@ -442,19 +443,15 @@ namespace RexCore
 			m_size = size;
 		}
 
-		constexpr T* GetInplaceData()
-		{
-			return static_cast<T*>(static_cast<void*>(m_inplaceData));
-		}
-
 	private:
 		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
-		T* m_data = GetInplaceData();
+		T* m_data = m_inplaceData;
 		IndexT m_size = 0;
 		IndexT m_capacity = InplaceSize;
 
-		alignas(alignof(T)) Byte m_inplaceData[InplaceSize * sizeof(T)];
-
+		union { // union to prevent default initialization of array elements
+			T m_inplaceData[InplaceSize];
+		};
 		using Base = VectorTypeBase<T, IndexT, InplaceVectorBase<T, IndexT, InplaceSize, Allocator>>;
 		friend class Base;
 	};
@@ -472,7 +469,8 @@ namespace RexCore
 		REX_CORE_NO_COPY(FixedVectorBase);
 		REX_CORE_DEFAULT_MOVE(FixedVectorBase);
 
-		constexpr FixedVectorBase() noexcept = default;
+		constexpr FixedVectorBase() noexcept
+			: m_size(0) {}
 
 		explicit constexpr FixedVectorBase(BaseT::SpanType from)
 		{
@@ -529,7 +527,9 @@ namespace RexCore
 		}
 
 	private:
-		alignas(alignof(T)) Byte m_inplaceData[MaxSize * sizeof(T)];
+		union {
+			T m_inplaceData[MaxSize];
+		};
 		IndexT m_size = 0;
 
 		using Base = VectorTypeBase<T, IndexT, FixedVectorBase<T, IndexT, MaxSize>>;
