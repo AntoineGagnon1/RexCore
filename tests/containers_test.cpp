@@ -8,6 +8,7 @@
 #include <rexcore/containers/function.hpp>
 #include <rexcore/containers/deque.hpp>
 #include <rexcore/containers/stack.hpp>
+#include <rexcore/containers/ring_buffer.hpp>
 #include <rexcore/math.hpp>
 #include <rexcore/time.hpp>
 
@@ -1849,6 +1850,22 @@ TEST_CASE("Containers/Stack")
 
 	TestStack<BigStack<S64>>(DefaultAllocator{});
 	TestStack<BigStack<S64, ArenaAllocator>>(arena);
+}
+
+TEST_CASE("Containers/RingBuffer")
+{
+	RingBuffer buffer(256);
+	void* ptr1 = buffer.Allocate(200, 8);
+	memset(ptr1, 42, 200);
+
+	void* ptr2 = buffer.Allocate(12, 8);
+	memset(ptr1, 5, 12);
+
+	void* ptr3 = buffer.Allocate(200, 8);
+	void* ptr4 = buffer.Allocate(12, 8);
+
+	ASSERT(ptr1 == ptr3);
+	ASSERT(ptr2 == ptr4);
 }
 
 TEST_CASE("Containers/ConstInit")
