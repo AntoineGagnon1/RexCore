@@ -88,3 +88,49 @@ TEST_CASE("Allocators/STD_Adapter")
 			ASSERT(vec[i] == i);
 	}
 }
+
+TEST_CASE("Allocators/PoolAlocator")
+{
+	struct vec2 {
+		U32 x, y;
+	};
+
+	{
+		PoolAllocator<vec2> pool;
+
+		vec2* ptr1 = pool.AllocateItem();
+		ASSERT(ptr1 != nullptr);
+		ptr1->x = 1;
+		ptr1->y = 2;
+
+		vec2* ptr2 = pool.AllocateItem();
+		ASSERT(ptr2 != nullptr);
+		ptr2->x = 3;
+		ptr2->y = 4;
+
+		vec2* ptr3 = pool.AllocateItem();
+		ASSERT(ptr3 != nullptr);
+		ptr3->x = 5;
+		ptr3->y = 6;
+
+		ASSERT(ptr1 != ptr2);
+		ASSERT(ptr2 != ptr3);
+		
+		pool.FreeItem(ptr2);
+		ASSERT(ptr1->x == 1);
+		ASSERT(ptr1->y == 2);
+		ASSERT(ptr3->x == 5);
+		ASSERT(ptr3->y == 6);
+
+		vec2* ptr4 = pool.AllocateItem();
+		ASSERT(ptr4 == ptr2);
+
+		vec2* ptr5 = pool.AllocateItem();
+		ASSERT(ptr5 != nullptr);
+
+		pool.FreeItem(ptr1);
+		pool.FreeItem(ptr3);
+		pool.FreeItem(ptr4);
+		pool.FreeItem(ptr5);
+	}
+}

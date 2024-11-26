@@ -75,6 +75,22 @@ namespace RexCore
 		{
 			_aligned_free(ptr);
 		}
+
+		[[nodiscard]] void* AllocateUntracked(U64 size, U64 alignment)
+		{
+			return _aligned_malloc(size, alignment);
+		}
+
+		[[nodiscard]] void* ReallocateUntracked(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment)
+		{
+			REX_CORE_ASSERT(ptr != nullptr);
+			return _aligned_realloc(ptr, newSize, alignment);
+		}
+
+		void FreeUntracked(void* ptr, [[maybe_unused]] U64 size)
+		{
+			_aligned_free(ptr);
+		}
 	};
 	static_assert(IAllocator<NonTrackingMallocAllocator>);
 

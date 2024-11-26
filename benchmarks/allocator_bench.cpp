@@ -9,8 +9,8 @@ BENCHMARK("Allocators")
 	static constexpr U64 N = 50'000;
 	void** ptrs = new void* [N];
 
-	DefaultAllocator rexMalloc;
-	BENCH_LOOP("Rex Malloc", 1000, N, {
+	MallocAllocator rexMalloc;
+	BENCH_LOOP("Rex Malloc", 1'000, N, {
 		for (int i = 0; i < N; i++)
 		{
 			ptrs[i] = rexMalloc.Allocate(32, 8);
@@ -23,7 +23,7 @@ BENCHMARK("Allocators")
 	});
 
 	ArenaAllocator arena;
-	BENCH_LOOP("Rex Arena", 1000, N, {
+	BENCH_LOOP("Rex Arena", 1'000, N, {
 		for (int i = 0; i < N; i++)
 		{
 			ptrs[i] = arena.Allocate(32, 8);
@@ -36,7 +36,7 @@ BENCHMARK("Allocators")
 		arena.Reset();
 	});
 
-	BENCH_LOOP("Malloc", 1000, N, {
+	BENCH_LOOP("Malloc", 1'000, N, {
 		for (int i = 0; i < N; i++)
 		{
 			ptrs[i] = malloc(32);
@@ -45,6 +45,31 @@ BENCHMARK("Allocators")
 		for (int i = 0; i < N; i++)
 		{
 			free(ptrs[i]);
+		}
+	});
+
+	BENCH_LOOP("Aligned Malloc", 1'000, N, {
+		for (int i = 0; i < N; i++)
+		{
+			ptrs[i] = _aligned_malloc(32, 8);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			_aligned_free(ptrs[i]);
+		}
+	});
+
+	PoolAllocatorBase<32, 8> pool;
+	BENCH_LOOP("Pool", 1'000, N, {
+		for (int i = 0; i < N; i++)
+		{
+			ptrs[i] = pool.Allocate(32, 8);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			pool.Free(ptrs[i], 32);
 		}
 	});
 
