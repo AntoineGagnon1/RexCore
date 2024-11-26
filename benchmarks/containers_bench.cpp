@@ -78,11 +78,11 @@ BENCHMARK("Containers/Vector")
 		for (int& i : vec)
 			i++;
 	});
+	BENCH_LOOP("Vector - Copy", 10'000, 1, {
+		Vector<int> copy = vec.Clone();
+	});
 	BENCH_LOOP("Vector - PopBack", 1'000'000, 1, {
 		vec.PopBack();
-	});
-	BENCH_LOOP("Vector - Copy", 100'000, 1, {
-		Vector<int> copy = vec.Clone();
 	});
 
 	InplaceVector<int, 16> inplaceVec;
@@ -93,11 +93,11 @@ BENCHMARK("Containers/Vector")
 		for (int& i : inplaceVec)
 			i++;
 		});
+	BENCH_LOOP("InplaceVector - Copy", 10'000, 1, {
+		decltype(inplaceVec) copy = inplaceVec.Clone();
+	});
 	BENCH_LOOP("InplaceVector - PopBack", 1'000'000, 1, {
 		inplaceVec.PopBack();
-	});
-	BENCH_LOOP("InplaceVector - Copy", 100'000, 1, {
-		decltype(inplaceVec) copy = inplaceVec.Clone();
 	});
 
 	std::vector<int> stdVec;
@@ -108,11 +108,11 @@ BENCHMARK("Containers/Vector")
 		for (int& i : stdVec)
 			i++;
 		});
+	BENCH_LOOP("std::vector - Copy", 10'000, 1, {
+		std::vector<int> copy = stdVec;
+	});
 	BENCH_LOOP("std::vector - PopBack", 1'000'000, 1, {
 		stdVec.pop_back();
-	});
-	BENCH_LOOP("std::vector - Copy", 100'000, 1, {
-		std::vector<int> copy = stdVec;
 	});
 }
 
