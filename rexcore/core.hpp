@@ -2,6 +2,8 @@
 #include <rexcore/vendors/Superluminal/PerformanceAPI.h>
 
 #include <stdint.h>
+#include <source_location>
+#include <format>
 
 namespace RexCore
 {
@@ -42,3 +44,15 @@ namespace RexCore
 #define REX_CORE_TRACE_NAMED(name)
 #endif
 }
+
+template <>
+struct std::formatter<std::source_location> {
+	constexpr auto parse(std::format_parse_context& ctx) const {
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	auto format(const std::source_location& loc, FormatContext& ctx) const {
+		return std::format_to(ctx.out(), "{}::{}:{}", loc.file_name(), loc.function_name(), loc.line());
+	}
+};
