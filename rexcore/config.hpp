@@ -23,11 +23,6 @@
 #define REX_CORE_ALLOC_NO_FREE(ptr, oldSize, oldLocation, newSize, newLocation) REX_CORE_ASSERT(false)
 #endif // !REX_CORE_LOG
 
-// Called when a non-reserved page is committed
-#ifndef REX_CORE_COMMIT_NO_RESERVE
-#define REX_CORE_COMMIT_NO_RESERVE(ptr, loc) REX_CORE_ASSERT(false)
-#endif // !REX_CORE_LOG
-
 // Called when a leak is detected when CheckForLeaks() is called
 #ifndef REX_CORE_LEAK
 #define REX_CORE_LEAK(ptr, size, allocLocation) REX_CORE_ASSERT(false)
