@@ -3,6 +3,10 @@
 // #define REX_CORE_TRACK_ALLOCS
 // #define REX_CORE_TRACE_ENABLED
 
+#ifdef REX_CORE_CONFIG_INCLUDE
+#include REX_CORE_CONFIG_INCLUDE
+#endif // REX_CORE_CONFIG_INCLUDE
+
 #ifndef REX_CORE_ASSERT
 #include <cassert>
 #define REX_CORE_ASSERT(cond, ...) assert(cond)
