@@ -6,4 +6,6 @@
 #define REX_CORE_WIN32
 #undef min
 #undef max
+#undef near
+#undef far
 #endif

@@ -2,7 +2,6 @@
 
 #include <rexcore/core.hpp>
 #include <rexcore/config.hpp>
-#include <rexcore/system_headers.hpp>
 #include <rexcore/math.hpp>
 
 #include <cstring> // std::memcpy and std::memmove
@@ -486,12 +485,12 @@ namespace RexCore
 #ifdef REX_CORE_TRACK_ALLOCS
 template <>
 struct std::formatter<RexCore::AllocSourceLocation> {
-	constexpr auto parse(std::format_parse_context& ctx) {
+	constexpr auto parse(std::format_parse_context& ctx) const {
 		return ctx.begin();
 	}
 
 	template <typename FormatContext>
-	auto format(const std::source_location& loc, FormatContext& ctx) {
+	auto format(const std::source_location& loc, FormatContext& ctx) const {
 		return std::format_to(ctx.out(), "{}::{}:{}", loc.file_name(), loc.function_name(), loc.line());
 	}
 };
@@ -499,12 +498,12 @@ struct std::formatter<RexCore::AllocSourceLocation> {
 #else
 template <>
 struct std::formatter<RexCore::AllocSourceLocation> {
-	constexpr auto parse(std::format_parse_context& ctx) {
+	constexpr auto parse(std::format_parse_context& ctx) const {
 		return ctx.begin();
 	}
 
 	template <typename FormatContext>
-	auto format(const RexCore::AllocSourceLocation& loc, FormatContext& ctx) {
+	auto format(const RexCore::AllocSourceLocation& loc, FormatContext& ctx) const {
 		return std::format_to(ctx.out(), "(Optimized AllocSourceLocation)");
 	}
 };
