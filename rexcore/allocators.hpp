@@ -482,3 +482,30 @@ namespace RexCore
 
 	using DefaultAllocator = MallocAllocator;
 }
+
+#ifdef REX_CORE_TRACK_ALLOCS
+template <>
+struct std::formatter<RexCore::AllocSourceLocation> {
+	constexpr auto parse(std::format_parse_context& ctx) {
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	auto format(const std::source_location& loc, FormatContext& ctx) {
+		return std::format_to(ctx.out(), "{}::{}:{}", loc.file_name(), loc.function_name(), loc.line());
+	}
+};
+
+#else
+template <>
+struct std::formatter<RexCore::AllocSourceLocation> {
+	constexpr auto parse(std::format_parse_context& ctx) {
+		return ctx.begin();
+	}
+
+	template <typename FormatContext>
+	auto format(const RexCore::AllocSourceLocation& loc, FormatContext& ctx) {
+		return std::format_to(ctx.out(), "(Optimized AllocSourceLocation)");
+	}
+};
+#endif
