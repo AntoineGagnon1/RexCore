@@ -111,7 +111,8 @@ namespace RexCore
 
 		if (s_aliveAlloc->Insert(ptr, Alloc{ size, loc }) == false)
 		{
-			REX_CORE_ALLOC_NO_FREE(ptr, result.first->second.size, result.first->second.loc, size, loc);
+			auto found = s_aliveAlloc->Find(ptr);
+			REX_CORE_ALLOC_NO_FREE(ptr, found->second.size, found->second.loc, size, loc);
 		}
 	}
 
