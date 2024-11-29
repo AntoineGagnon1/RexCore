@@ -4,6 +4,14 @@
 #include <rexcore/containers/map.hpp>
 #include <rexcore/containers/smart_ptrs.hpp>
 
+#ifdef REX_CORE_TRACK_ALLOCS_TRACE
+	#if __cpp_lib_stacktrace == 202011L && __cpp_lib_formatters	== 202302L
+		#include <stacktrace>
+	#else
+		#error "REX_CORE_TRACK_ALLOCS_TRACE requires std::stacktrace"
+	#endif
+#endif
+
 namespace RexCore
 {
 #ifdef REX_CORE_WIN32
@@ -94,22 +102,35 @@ namespace RexCore
 	};
 	static_assert(IAllocator<NonTrackingMallocAllocator>);
 
+#ifdef REX_CORE_TRACK_ALLOCS_TRACE
+	using StackTraceType = std::basic_stacktrace<StdAllocatorAdaptor<std::stacktrace_entry, NonTrackingMallocAllocator>>;
+#endif
 	struct Alloc
 	{
 		U64 size;
+#ifdef REX_CORE_TRACK_ALLOCS_TRACE
+		StackTraceType loc;
+#else
 		AllocSourceLocation loc;
+#endif
 	};
 
 	// TODO : should use a faster free-list allocator
 	static UniquePtr<HashMap<void*, Alloc, NonTrackingMallocAllocator>, NonTrackingMallocAllocator> s_aliveAlloc;
 
-	void TrackAlloc(void* ptr, U64 size, AllocSourceLocation loc)
+	void TrackAlloc(void* ptr, U64 size, [[maybe_unused]] AllocSourceLocation loc)
 	{
 		REX_CORE_TRACE_FUNC();
 		if (!s_aliveAlloc)
 			return;
 
-		if (s_aliveAlloc->Insert(ptr, Alloc{ size, loc }) == false)
+#ifdef REX_CORE_TRACK_ALLOCS_TRACE
+		const bool inserted = s_aliveAlloc->Insert(ptr, Alloc{ size, StackTraceType::current()});
+#else
+		const bool inserted = s_aliveAlloc->Insert(ptr, Alloc{ size, loc });
+#endif
+
+		if (!inserted)
 		{
 			auto found = s_aliveAlloc->Find(ptr);
 			REX_CORE_ALLOC_NO_FREE(ptr, found->second.size, found->second.loc, size, loc);

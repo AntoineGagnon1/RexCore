@@ -3,6 +3,10 @@
 // #define REX_CORE_TRACK_ALLOCS
 // #define REX_CORE_TRACE_ENABLED
 
+// Only available if std::stacktrace is available
+// WARNING : makes allocations very slow, but usefull to find leaks
+// #define REX_CORE_TRACK_ALLOCS_TRACE
+
 #ifdef REX_CORE_CONFIG_INCLUDE
 #include REX_CORE_CONFIG_INCLUDE
 #endif // REX_CORE_CONFIG_INCLUDE
