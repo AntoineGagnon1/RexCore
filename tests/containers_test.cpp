@@ -9,6 +9,7 @@
 #include <rexcore/containers/deque.hpp>
 #include <rexcore/containers/stack.hpp>
 #include <rexcore/containers/ring_buffer.hpp>
+#include <rexcore/containers/no_destructor.hpp>
 #include <rexcore/math.hpp>
 #include <rexcore/time.hpp>
 
@@ -1866,6 +1867,20 @@ TEST_CASE("Containers/RingBuffer")
 
 	ASSERT(ptr1 == ptr3);
 	ASSERT(ptr2 == ptr4);
+}
+
+TEST_CASE("Containers/NoDestructor")
+{
+	struct DontDestroy
+	{
+		int value = 3;
+		~DontDestroy() { assert(false); }
+	};
+
+	NoDestructor<DontDestroy> dontDestroy;
+
+	ASSERT(dontDestroy->value == 3);
+	ASSERT((*dontDestroy).value == 3);
 }
 
 TEST_CASE("Containers/ConstInit")
