@@ -65,45 +65,10 @@ namespace RexCore
 	const U64 PageSize = GetPageSize();
 
 #ifdef REX_CORE_TRACK_ALLOCS
-	class NonTrackingMallocAllocator : public AllocatorBase<NonTrackingMallocAllocator>
-	{
-	public:
-		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
-		{
-			return _aligned_malloc(size, alignment);
-		}
-
-		[[nodiscard]] void* Reallocate(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment)
-		{
-			REX_CORE_ASSERT(ptr != nullptr);
-			return _aligned_realloc(ptr, newSize, alignment);
-		}
-
-		void Free(void* ptr, [[maybe_unused]] U64 size)
-		{
-			_aligned_free(ptr);
-		}
-
-		[[nodiscard]] void* AllocateUntracked(U64 size, U64 alignment)
-		{
-			return _aligned_malloc(size, alignment);
-		}
-
-		[[nodiscard]] void* ReallocateUntracked(void* ptr, [[maybe_unused]] U64 oldSize, U64 newSize, U64 alignment)
-		{
-			REX_CORE_ASSERT(ptr != nullptr);
-			return _aligned_realloc(ptr, newSize, alignment);
-		}
-
-		void FreeUntracked(void* ptr, [[maybe_unused]] U64 size)
-		{
-			_aligned_free(ptr);
-		}
-	};
-	static_assert(IAllocator<NonTrackingMallocAllocator>);
+	using AllocTrackAllocator = NonTracking<MallocAllocator>;
 
 #ifdef REX_CORE_TRACK_ALLOCS_TRACE
-	using StackTraceType = std::basic_stacktrace<StdAllocatorAdaptor<std::stacktrace_entry, NonTrackingMallocAllocator>>;
+	using StackTraceType = std::basic_stacktrace<StdAllocatorAdaptor<std::stacktrace_entry, AllocTrackAllocator>>;
 #endif
 	struct Alloc
 	{
@@ -116,7 +81,7 @@ namespace RexCore
 	};
 
 	// TODO : should use a faster free-list allocator
-	static UniquePtr<HashMap<void*, Alloc, NonTrackingMallocAllocator>, NonTrackingMallocAllocator> s_aliveAlloc;
+	static UniquePtr<HashMap<void*, Alloc, AllocTrackAllocator>, AllocTrackAllocator> s_aliveAlloc;
 
 	void TrackAlloc(void* ptr, U64 size, [[maybe_unused]] AllocSourceLocation loc)
 	{
@@ -161,7 +126,7 @@ namespace RexCore
 
 	void StartTrackingMemory()
 	{
-		s_aliveAlloc = AllocateUnique<decltype(s_aliveAlloc)::ValueType, NonTrackingMallocAllocator>(NonTrackingMallocAllocator{});
+		s_aliveAlloc = AllocateUnique<decltype(s_aliveAlloc)::ValueType, AllocTrackAllocator>(AllocTrackAllocator{});
 	}
 
 	bool CheckForLeaks()

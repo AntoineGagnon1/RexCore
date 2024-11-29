@@ -479,6 +479,27 @@ namespace RexCore
 		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
 	};
 
+	template<IAllocator Allocator>
+	class NonTracking : public Allocator
+	{
+	public:
+		[[nodiscard]] void* Allocate(U64 size, U64 alignment)
+		{
+			return Allocator::AllocateUntracked(size, alignment);
+		}
+
+		[[nodiscard]] void* Reallocate(void* ptr, U64 oldSize, U64 newSize, U64 alignment)
+		{
+			return Allocator::ReallocateUntracked(ptr, oldSize, newSize, alignment);
+		}
+
+		void Free(void* ptr, U64 size)
+		{
+			Allocator::FreeUntracked(ptr, size);
+		}
+	};
+	static_assert(IAllocator<NonTracking<MallocAllocator>>);
+
 	using DefaultAllocator = MallocAllocator;
 }
 
