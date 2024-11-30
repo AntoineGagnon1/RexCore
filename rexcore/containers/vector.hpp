@@ -7,6 +7,7 @@
 
 #include <iterator>
 #include <bit>
+#include <initializer_list>
 
 namespace RexCore
 {
@@ -266,6 +267,14 @@ namespace RexCore
 				BaseT::PushBack(item);
 		}
 
+		explicit constexpr VectorBase(std::initializer_list<T> from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+			: m_allocator(allocator)
+		{
+			Reserve(static_cast<IndexT>(from.size()));
+			for (const T& item : from)
+				BaseT::PushBack(item);
+		}
+
 		[[nodiscard]] constexpr const T* Data() const { return m_data; }
 		[[nodiscard]] constexpr T* Data() { return m_data; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
@@ -368,6 +377,14 @@ namespace RexCore
 			: m_allocator(allocator)
 		{
 			Reserve(from.Size());
+			for (const T& item : from)
+				BaseT::PushBack(item);
+		}
+
+		explicit constexpr InplaceVectorBase(std::initializer_list<T> from, AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>())
+			: m_allocator(allocator)
+		{
+			Reserve(static_cast<IndexT>(from.size()));
 			for (const T& item : from)
 				BaseT::PushBack(item);
 		}
