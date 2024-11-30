@@ -456,3 +456,27 @@ struct std::formatter<RexCore::WString<>, wchar_t> : public  std::formatter<std:
 		return std::formatter<std::wstring_view, wchar_t>::format(std::wstring_view(str.Data(), str.Size()), ctx);
 	}
 };
+
+inline std::ostream& operator<<(std::ostream& os, const RexCore::StringView& str)
+{
+	os << std::string_view(str.Data(), str.Size());
+	return os;
+}
+
+inline std::wostream& operator<<(std::wostream& os, const RexCore::WStringView& str)
+{
+	os << std::wstring_view(str.Data(), str.Size());
+	return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const RexCore::String<>& str)
+{
+	os << std::string_view(str.Data(), str.Size());
+	return os;
+}
+
+inline std::wostream& operator<<(std::wostream& os, const RexCore::WString<>& str)
+{
+	os << std::wstring_view(str.Data(), str.Size());
+	return os;
+}
