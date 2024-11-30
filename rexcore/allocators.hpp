@@ -101,6 +101,9 @@ namespace RexCore
 	using AllocatorRef = std::conditional_t<std::is_empty_v<Allocator>, Allocator, std::add_lvalue_reference_t<Allocator>>;
 
 	template<IAllocator Allocator>
+	using AllocatorRefBaseClass = std::conditional_t<std::is_empty_v<Allocator>, Allocator, std::reference_wrapper<Allocator>>;
+
+	template<IAllocator Allocator>
 	inline consteval AllocatorRef<Allocator> AllocatorRefDefaultArg()
 	{
 		static_assert(std::is_empty_v<Allocator>, "You must pass an allocator reference if the allocator is not stateless");
@@ -424,7 +427,7 @@ namespace RexCore
 	static_assert(IAllocator<PoolAllocator<U64>>);
 
 	template<typename T, IAllocator Allocator>
-	class StdAllocatorAdaptor : public AllocatorRef<Allocator>
+	class StdAllocatorAdaptor : public AllocatorRefBaseClass<Allocator>
 	{
 	public:
 		using value_type = T;
@@ -435,22 +438,24 @@ namespace RexCore
 		};
 
 		StdAllocatorAdaptor(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
-			: AllocatorRef<Allocator>(allocator)
+			: AllocatorRefBaseClass<Allocator>(allocator)
 		{}
 
 		template<typename U>
 		StdAllocatorAdaptor(const StdAllocatorAdaptor<U, Allocator>& other) noexcept
-			: AllocatorRef<Allocator>(other.GetAllocator())
+			: AllocatorRefBaseClass<Allocator>(other.GetAllocator())
 		{}
 
 		[[nodiscard]] constexpr T* allocate(std::size_t num)
 		{
-			return reinterpret_cast<T*>(AllocatorRef<Allocator>::Allocate(static_cast<U64>(num) * sizeof(T), alignof(T)));
+			Allocator& alloc = static_cast<Allocator&>(*this);
+			return reinterpret_cast<T*>(alloc.Allocate(static_cast<U64>(num) * sizeof(T), alignof(T)));
 		}
 
 		constexpr void deallocate(T* ptr, std::size_t num) noexcept
 		{
-			AllocatorRef<Allocator>::Free(ptr, static_cast<U64>(num) * sizeof(T));
+			Allocator& alloc = static_cast<Allocator&>(*this);
+			alloc.Free(ptr, static_cast<U64>(num) * sizeof(T));
 		}
 
 		std::size_t MaxAllocationSize() const noexcept
