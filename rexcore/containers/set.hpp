@@ -9,11 +9,11 @@
 
 namespace RexCore
 {
-	template<typename Key, IAllocator Allocator = DefaultAllocator>
-	class HashSet : ska::flat_hash_set<Key, std::hash<Key>, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>
+	template<typename Key, IAllocator Allocator = DefaultAllocator, typename Hash = std::hash<Key>>
+	class HashSet : ska::flat_hash_set<Key, Hash, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>
 	{
 	private:
-		using Impl = ska::flat_hash_set<Key, std::hash<Key>, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>;
+		using Impl = ska::flat_hash_set<Key, Hash, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>;
 
 	public:
 		using Iterator = typename Impl::iterator;

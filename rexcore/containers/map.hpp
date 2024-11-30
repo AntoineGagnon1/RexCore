@@ -10,11 +10,11 @@
 
 namespace RexCore
 {
-	template<typename Key, typename Value, IAllocator Allocator = DefaultAllocator>
-	class HashMap : ska::bytell_hash_map<Key, Value, std::hash<Key>, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key,Value>, Allocator>>
+	template<typename Key, typename Value, IAllocator Allocator = DefaultAllocator, typename Hash = std::hash<Key>>
+	class HashMap : ska::bytell_hash_map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key,Value>, Allocator>>
 	{
 	private:
-		using Impl = ska::bytell_hash_map<Key, Value, std::hash<Key>, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key, Value>, Allocator>>;
+		using Impl = ska::bytell_hash_map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key, Value>, Allocator>>;
 		constexpr static int Impl_BlockSize = ska::detailv8::CalculateBytellBlockSize<Key, Value>::value; // For natvis
 
 	public:
