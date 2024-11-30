@@ -67,8 +67,8 @@
 
   <Type Name="RexCore::StringViewBase&lt;*&gt;">
     <DisplayString Condition="m_data == nullptr &amp;&amp; m_size == 0">Empty</DisplayString>
-    <DisplayString Condition="!(m_data == nullptr &amp;&amp; m_size == 0)">{m_data, na}{{Size={m_size}}}</DisplayString>
-    <StringView>m_data, na</StringView>
+    <DisplayString Condition="!(m_data == nullptr &amp;&amp; m_size == 0)">{m_data, [m_size]}{{Size={m_size}}}</DisplayString>
+    <StringView>m_data, [m_size]</StringView>
 
     <Expand>
       <ArrayItems>
