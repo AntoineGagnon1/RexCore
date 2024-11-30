@@ -482,7 +482,7 @@ namespace RexCore
 
 		AllocatorRef<Allocator> GetAllocator() const noexcept
 		{
-			return *static_cast<const AllocatorRef<Allocator>*>(this);
+			return static_cast<AllocatorRef<Allocator>>(*this);
 		}
 	};
 
