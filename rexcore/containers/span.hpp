@@ -72,6 +72,17 @@ namespace RexCore
 			return nullptr;
 		}
 
+		// Will return Size() if not found
+		[[nodiscard]] constexpr IndexT IndexOf(this auto&& self, const T& value)
+		{
+			for (IndexT i = 0; i < self.Size(); i++)
+			{
+				if (self[i] == value)
+					return i;
+			}
+			return self.Size();
+		}
+
 		[[nodiscard]] constexpr SpanT SubSpan(this auto&& self, IndexT start, IndexT length = Math::MaxValue<IndexT>())
 		{
 			if (start >= self.Size())

@@ -96,6 +96,15 @@ void TestSpanTypeBase(SpanT span)
 		ASSERT(span.TryFind([](const ValueT& v) { return v == ValueT(100); }) == nullptr);
 	}
 
+	{ // IndexOf
+		for (IndexT i = 0; i < 16; i++)
+		{
+			ASSERT(span.IndexOf(ValueT(i)) == i);
+		}
+
+		ASSERT(span.IndexOf(ValueT(100)) == span.Size());
+	}
+
 	{ // SubSpan
 		const SpanT subSpan = span.SubSpan(3, 5);
 		ASSERT(subSpan.Size() == 5);
