@@ -56,4 +56,25 @@ namespace RexCore
 			: Impl(std::allocator_arg_t{}, allocator, std::move(functor))
 		{}
 	};
+
+	template<typename T>
+	inline bool operator==(std::nullptr_t, const Function<T>& rhs) noexcept
+	{
+		return !rhs;
+	}
+	template<typename T>
+	inline bool operator==(const Function<T>& lhs, std::nullptr_t) noexcept
+	{
+		return !lhs;
+	}
+	template<typename T>
+	inline bool operator!=(std::nullptr_t, const Function<T>& rhs) noexcept
+	{
+		return rhs;
+	}
+	template<typename T>
+	inline bool operator!=(const Function<T>& lhs, std::nullptr_t) noexcept
+	{
+		return lhs;
+	}
 }
