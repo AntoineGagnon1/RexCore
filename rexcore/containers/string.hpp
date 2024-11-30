@@ -74,6 +74,12 @@ namespace RexCore
 		}
 
 		template<typename IntoT>
+		constexpr void SplitInto(this auto&& self, IntoT& into, CharT delimiter)
+		{
+			self.SplitInto(into, StringViewT(&delimiter, 1));
+		}
+
+		template<typename IntoT>
 		constexpr void SplitInto(this auto&& self, IntoT& into, StringViewT delimiter)
 		{
 			U64 start = 0;
