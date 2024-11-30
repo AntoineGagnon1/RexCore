@@ -424,28 +424,33 @@ namespace RexCore
 	static_assert(IAllocator<PoolAllocator<U64>>);
 
 	template<typename T, IAllocator Allocator>
-	class StdAllocatorAdaptor
+	class StdAllocatorAdaptor : public AllocatorRef<Allocator>
 	{
 	public:
 		using value_type = T;
 
+		template<typename U>
+		struct rebind {
+			using other = StdAllocatorAdaptor<U, Allocator>;
+		};
+
 		StdAllocatorAdaptor(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
-			: m_allocator(allocator)
+			: AllocatorRef<Allocator>(allocator)
 		{}
 
 		template<typename U>
 		StdAllocatorAdaptor(const StdAllocatorAdaptor<U, Allocator>& other) noexcept
-			: m_allocator(other.GetAllocator())
+			: AllocatorRef<Allocator>(other.GetAllocator())
 		{}
 
 		[[nodiscard]] constexpr T* allocate(std::size_t num)
 		{
-			return reinterpret_cast<T*>(m_allocator.Allocate(static_cast<U64>(num) * sizeof(T), alignof(T)));
+			return reinterpret_cast<T*>(AllocatorRef<Allocator>::Allocate(static_cast<U64>(num) * sizeof(T), alignof(T)));
 		}
 
 		constexpr void deallocate(T* ptr, std::size_t num) noexcept
 		{
-			m_allocator.Free(ptr, static_cast<U64>(num) * sizeof(T));
+			AllocatorRef<Allocator>::Free(ptr, static_cast<U64>(num) * sizeof(T));
 		}
 
 		std::size_t MaxAllocationSize() const noexcept
@@ -461,7 +466,7 @@ namespace RexCore
 			}
 			else
 			{
-				return &m_allocator == &rhs.m_allocator;
+				return &GetAllocator() == &rhs.GetAllocator();
 			}
 		}
 
@@ -472,11 +477,8 @@ namespace RexCore
 
 		AllocatorRef<Allocator> GetAllocator() const noexcept
 		{
-			return m_allocator;
+			return *static_cast<const AllocatorRef<Allocator>*>(this);
 		}
-
-	private:
-		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
 	};
 
 	template<IAllocator Allocator>
@@ -501,6 +503,7 @@ namespace RexCore
 	static_assert(IAllocator<NonTracking<MallocAllocator>>);
 
 	using DefaultAllocator = MallocAllocator;
+	using DefaultNonTrackingAllocator = NonTracking<MallocAllocator>;
 }
 
 #ifndef REX_CORE_TRACK_ALLOCS
