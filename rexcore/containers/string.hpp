@@ -236,7 +236,25 @@ namespace RexCore
 		constexpr static U64 InplaceCapacity = SmallStringSize - 1;
 
 		REX_CORE_NO_COPY(StringBase);
-		REX_CORE_DEFAULT_MOVE(StringBase);
+		
+		constexpr StringBase(StringBase&& other) noexcept
+			: m_allocator(other.m_allocator), m_size(other.m_size)
+		{
+			MemCopy(&other.m_bigSmallUnion, &m_bigSmallUnion, sizeof(m_bigSmallUnion));
+
+			MemSet(&other.m_bigSmallUnion, 0, sizeof(m_bigSmallUnion));
+			other.m_size = SmallStringBitMask;
+		}
+
+		constexpr StringBase& operator=(StringBase&& other) noexcept {
+			m_allocator = other.m_allocator;
+			m_size = other.m_size;
+			MemCopy(&other.m_bigSmallUnion, &m_bigSmallUnion, sizeof(m_bigSmallUnion));
+
+			MemSet(&other.m_bigSmallUnion, 0, sizeof(m_bigSmallUnion));
+			other.m_size = SmallStringBitMask;
+			return *this;
+		}
 
 		constexpr StringBase(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
 			: m_allocator(allocator)
@@ -270,11 +288,11 @@ namespace RexCore
 			SetSize(from.Size());
 		}
 
-		[[nodiscard]] constexpr const CharT* Data() const { return IsSmallString() ? m_small : m_big.m_data; }
-		[[nodiscard]] constexpr CharT* Data() { return IsSmallString() ? m_small : m_big.m_data; }
+		[[nodiscard]] constexpr const CharT* Data() const { return IsSmallString() ? m_bigSmallUnion.m_small : m_bigSmallUnion.m_big.m_data; }
+		[[nodiscard]] constexpr CharT* Data() { return IsSmallString() ? m_bigSmallUnion.m_small : m_bigSmallUnion.m_big.m_data; }
 		[[nodiscard]] constexpr const CharT* CStr() const { return Data(); }
 		[[nodiscard]] constexpr U64 Size() const { return m_size & (~SmallStringBitMask); }
-		[[nodiscard]] constexpr U64 Capacity() const { return IsSmallString() ? SmallStringSize - 1 : m_big.m_capacity; } // -1 for null terminator
+		[[nodiscard]] constexpr U64 Capacity() const { return IsSmallString() ? SmallStringSize - 1 : m_bigSmallUnion.m_big.m_capacity; } // -1 for null terminator
 		[[nodiscard]] constexpr AllocatorRef<Allocator> GetAllocator() const { return m_allocator; }
 
 		constexpr void Reserve(U64 newCapacity)
@@ -286,15 +304,15 @@ namespace RexCore
 			if (IsSmallString())
 			{
 				CharT* newData = static_cast<CharT*>(m_allocator.Allocate((newCapacity + 1) * sizeof(CharT), alignof(CharT)));
-				MemCopy(m_small, newData, (Size() + 1) * sizeof(CharT));
+				MemCopy(m_bigSmallUnion.m_small, newData, (Size() + 1) * sizeof(CharT));
 				SetSmallString(false);
-				m_big.m_data = newData;
-				m_big.m_capacity = newCapacity;
+				m_bigSmallUnion.m_big.m_data = newData;
+				m_bigSmallUnion.m_big.m_capacity = newCapacity;
 			}
 			else
 			{
-				m_big.m_data = static_cast<CharT*>(m_allocator.Reallocate(m_big.m_data, (m_big.m_capacity + 1) * sizeof(CharT), (newCapacity + 1) * sizeof(CharT), alignof(CharT)));
-				m_big.m_capacity = newCapacity;
+				m_bigSmallUnion.m_big.m_data = static_cast<CharT*>(m_allocator.Reallocate(m_bigSmallUnion.m_big.m_data, (m_bigSmallUnion.m_big.m_capacity + 1) * sizeof(CharT), (newCapacity + 1) * sizeof(CharT), alignof(CharT)));
+				m_bigSmallUnion.m_big.m_capacity = newCapacity;
 			}
 		}
 
@@ -314,10 +332,10 @@ namespace RexCore
 				else
 				{
 					// TODO perf : use Reallocate
-					CharT* oldData = m_big.m_data; // Because m_small will overwrite m_big.m_data
-					CharT* newData = newSize < SmallStringSize ? m_small : static_cast<CharT*>(m_allocator.Allocate((newSize + 1) * sizeof(CharT), alignof(CharT)));
+					CharT* oldData = m_bigSmallUnion.m_big.m_data; // Because m_bigSmallUnion.m_small will overwrite m_bigSmallUnion.m_big.m_data
+					CharT* newData = newSize < SmallStringSize ? m_bigSmallUnion.m_small : static_cast<CharT*>(m_allocator.Allocate((newSize + 1) * sizeof(CharT), alignof(CharT)));
 
-					auto oldCapacity = m_big.m_capacity;
+					auto oldCapacity = m_bigSmallUnion.m_big.m_capacity;
 					MemCopy(oldData, newData, (newSize + 1) * sizeof(CharT));
 					m_allocator.Free(oldData, (oldCapacity + 1) * sizeof(CharT));
 
@@ -328,8 +346,8 @@ namespace RexCore
 					}
 					else
 					{
-						m_big.m_data = newData;
-						m_big.m_capacity = newSize;
+						m_bigSmallUnion.m_big.m_data = newData;
+						m_bigSmallUnion.m_big.m_capacity = newSize;
 					}
 
 					SetSize(newSize);
@@ -351,7 +369,7 @@ namespace RexCore
 			Base::Clear();
 			if (!IsSmallString())
 			{
-				m_allocator.Free(m_big.m_data, (m_big.m_capacity + 1) * sizeof(CharT));
+				m_allocator.Free(m_bigSmallUnion.m_big.m_data, (m_bigSmallUnion.m_big.m_capacity + 1) * sizeof(CharT));
 				// Go back to small string
 				SetSmallString(true);
 				SetSize(0);
@@ -404,9 +422,9 @@ namespace RexCore
 				CharT* m_data;
 			} m_big = {0, nullptr};
 			CharT m_small[SmallStringSize];
-		};
+		} m_bigSmallUnion;
 
-		static_assert(sizeof(decltype(m_big)) <= sizeof(decltype(m_small)));
+		static_assert(sizeof(decltype(m_bigSmallUnion.m_big)) <= sizeof(decltype(m_bigSmallUnion.m_small)));
 
 		using Base = VectorTypeBase<CharT, U64, StringBase<CharT, Allocator, InplaceSize>>;
 		friend class Base;

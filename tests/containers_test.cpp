@@ -1203,6 +1203,19 @@ void TestString(Args&& ...args)
 			const StringT str5(args...);
 			ASSERT((str4 + str5).IsEmpty());
 		}
+
+		{ // Move
+			StringT str("Here is a very very very very long string", args...);
+			StringT str2 = std::move(str);
+			ASSERT(str.Size() == 0);
+			ASSERT(str == "");
+
+			StringT str3(std::move(str2));
+			ASSERT(str2.Size() == 0);
+			ASSERT(str2 == "");
+
+			ASSERT(str3 == "Here is a very very very very long string");
+		}
 	}
 	else
 	{
@@ -1250,6 +1263,19 @@ void TestString(Args&& ...args)
 			StringT str4(args...);
 			const StringT str5(args...);
 			ASSERT((str4 + str5).IsEmpty());
+		}
+
+		{ // Move
+			StringT str(L"Here is a very very very very long string", args...);
+			StringT str2 = std::move(str);
+			ASSERT(str.Size() == 0);
+			ASSERT(str == L"");
+
+			StringT str3(std::move(str2));
+			ASSERT(str2.Size() == 0);
+			ASSERT(str2 == L"");
+
+			ASSERT(str3 == L"Here is a very very very very long string");
 		}
 	}
 }
