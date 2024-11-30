@@ -79,11 +79,15 @@ void TestSpanTypeBase(SpanT span)
 	}
 
 	{ // Contains
-		for (IndexT i = 0; i < 16; i++)
+		for (IndexT i = 0; i < 16; i++) {
 			ASSERT(span.Contains(ValueT(i)));
+			ASSERT(span.Contains([i](const ValueT& v) {return v == ValueT(i); }));
+		}
 
 		ASSERT(!span.Contains(ValueT(100)));
+		ASSERT(!span.Contains([](const ValueT& v) {return v == ValueT(100); }));
 	}
+
 
 	{ // TryFind
 		for (IndexT i = 0; i < 16; i++)

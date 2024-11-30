@@ -49,6 +49,17 @@ namespace RexCore
 			return false;
 		}
 
+		template<IPredicate<const T&> Predicate>
+		[[nodiscard]] constexpr bool Contains(this auto&& self, Predicate&& predicate)
+		{
+			for (const T& found : self)
+			{
+				if (predicate(found))
+					return true;
+			}
+			return false;
+		}
+
 		// Will return nullptr if not found
 		[[nodiscard]] constexpr auto TryFind(this auto&& self, const T& value) -> CopyConst<decltype(self), T>*
 		{
