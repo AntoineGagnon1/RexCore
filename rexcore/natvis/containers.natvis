@@ -148,7 +148,6 @@
 
     <Expand>
       <Item Name="Size" ExcludeView="simple">num_elements</Item>
-      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
 
       <CustomListItems>
         <Variable Name="i" InitialValue="0"/>
@@ -172,7 +171,6 @@
 
     <Expand>
       <Item Name="Size" ExcludeView="simple">num_elements</Item>
-      <Item Name="Allocator" ExcludeView="simple">m_allocator</Item>
 
       <CustomListItems>
         <Variable Name="i" InitialValue="0"/>

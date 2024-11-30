@@ -18,6 +18,12 @@ namespace RexCore
 		T* operator->() { return reinterpret_cast<T*>(m_instance); }
 		const T* operator->() const { return reinterpret_cast<const T*>(m_instance); }
 
+		T* operator&() { return reinterpret_cast<T*>(m_instance); }
+		const T* operator&() const { return reinterpret_cast<const T*>(m_instance); }
+
+		T* Get() { return reinterpret_cast<T*>(m_instance); }
+		const T* Get() const { return reinterpret_cast<const T*>(m_instance); }
+
 	private:
 		alignas(T) Byte m_instance[sizeof(T)];
 	};
