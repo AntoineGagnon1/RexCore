@@ -272,6 +272,7 @@ namespace RexCore
 
 		[[nodiscard]] constexpr const CharT* Data() const { return IsSmallString() ? m_small : m_big.m_data; }
 		[[nodiscard]] constexpr CharT* Data() { return IsSmallString() ? m_small : m_big.m_data; }
+		[[nodiscard]] constexpr const CharT* CStr() const { return Data(); }
 		[[nodiscard]] constexpr U64 Size() const { return m_size & (~SmallStringBitMask); }
 		[[nodiscard]] constexpr U64 Capacity() const { return IsSmallString() ? SmallStringSize - 1 : m_big.m_capacity; } // -1 for null terminator
 		[[nodiscard]] constexpr AllocatorRef<Allocator> GetAllocator() const { return m_allocator; }
