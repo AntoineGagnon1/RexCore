@@ -491,6 +491,46 @@ void VecBaseTestRemoveAtOrdered(Args&& ...args)
 }
 
 template<typename VecT, typename ...Args>
+void VecBaseTestRemove(Args&& ...args)
+{
+	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
+	VecT vec = VecT(args...);
+	for (U32 i = 0; i < 16; i++)
+		vec.EmplaceBack(ValueT(i));
+
+	vec.Remove(ValueT(5));
+	ASSERT(vec.Size() == 15);
+	ASSERT(vec[5] == ValueT(15));
+
+	for (IndexT i = 0; i < 5; i++)
+		ASSERT(vec[i] == ValueT(i));
+
+	for (IndexT i = 6; i < 15; i++)
+		ASSERT(vec[i] == ValueT(i));
+}
+
+template<typename VecT, typename ...Args>
+void VecBaseTestRemoveOrdered(Args&& ...args)
+{
+	using IndexT = VecT::IndexType;
+	using ValueT = VecT::ValueType;
+	VecT vec = VecT(args...);
+	for (U32 i = 0; i < 16; i++)
+		vec.EmplaceBack(ValueT(i));
+
+	vec.RemoveOrdered(ValueT(5));
+	ASSERT(vec.Size() == 15);
+	ASSERT(vec[5] == ValueT(6));
+
+	for (IndexT i = 0; i < 5; i++)
+		ASSERT(vec[i] == ValueT(i));
+
+	for (IndexT i = 6; i < 15; i++)
+		ASSERT(vec[i] == ValueT(i + 1));
+}
+
+template<typename VecT, typename ...Args>
 void VecBaseTestForEach(Args&& ...args)
 {
 	using IndexT = VecT::IndexType;
@@ -577,6 +617,8 @@ void TestVectorBase(Args&& ...args)
 	VecBaseTestPopBack<VecT>(args...);
 	VecBaseTestRemoveAt<VecT>(args...);
 	VecBaseTestRemoveAtOrdered<VecT>(args...);
+	VecBaseTestRemove<VecT>(args...);
+	VecBaseTestRemoveOrdered<VecT>(args...);
 	VecBaseTestForEach<VecT>(args...);
 	VecBaseTestContains<VecT>(args...);
 	VecBaseTestClone<VecT>(args...);

@@ -203,6 +203,13 @@ namespace RexCore
 			self.SetSize(size - 1);
 		}
 
+		// Swap with the last element and remove
+		// WARNING : this will change the order of the elements
+		constexpr void Remove(this auto&& self, const T& value)
+		{
+			self.RemoveAt(self.IndexOf(value));
+		}
+
 		constexpr void RemoveAtOrdered(this auto&& self, IndexT index)
 		{
 			const IndexT size = self.Size();
@@ -214,6 +221,11 @@ namespace RexCore
 				self.Data()[i] = std::move(self.Data()[i + 1]);
 
 			self.SetSize(size - 1);
+		}
+
+		constexpr void RemoveOrdered(this auto&& self, const T& value)
+		{
+			self.RemoveAtOrdered(self.IndexOf(value));
 		}
 
 	public:
