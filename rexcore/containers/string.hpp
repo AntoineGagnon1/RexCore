@@ -530,3 +530,39 @@ inline std::wostream& operator<<(std::wostream& os, const RexCore::WString<>& st
 	os << std::wstring_view(str.Data(), str.Size());
 	return os;
 }
+
+template <>
+struct std::hash<RexCore::StringView>
+{
+	std::size_t operator()(RexCore::StringView str) const
+	{
+		return std::hash<std::string_view>()(std::string_view{ str.Data(), str.Size() });
+	}
+};
+
+template <>
+struct std::hash<RexCore::WStringView>
+{
+	std::size_t operator()(RexCore::WStringView str) const
+	{
+		return std::hash<std::wstring_view>()(std::wstring_view{ str.Data(), str.Size() });
+	}
+};
+
+template <>
+struct std::hash<RexCore::String<>>
+{
+	std::size_t operator()(const RexCore::String<>& str) const
+	{
+		return std::hash<std::string_view>()(std::string_view{ str.Data(), str.Size() });
+	}
+};
+
+template <>
+struct std::hash<RexCore::WString<>>
+{
+	std::size_t operator()(const RexCore::WString<>& str) const
+	{
+		return std::hash<std::wstring_view>()(std::wstring_view{ str.Data(), str.Size() });
+	}
+};
