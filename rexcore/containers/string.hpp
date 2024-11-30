@@ -6,6 +6,7 @@
 
 #include <cstring>
 #include <compare>
+#include <string_view>
 
 namespace RexCore
 {
@@ -427,3 +428,31 @@ namespace RexCore
 	using InplaceWString = StringBase<wchar_t, Allocator, InplaceSize>;
 
 }
+
+template <>
+struct std::formatter<RexCore::StringView> : public std::formatter<std::string_view> {
+	auto format(const RexCore::StringView& str, std::format_context& ctx) const {
+		return std::formatter<std::string_view>::format(std::string_view(str.Data(), str.Size()), ctx);
+	}
+};
+
+template <>
+struct std::formatter<RexCore::WStringView, wchar_t> : public std::formatter<std::wstring_view, wchar_t> {
+	auto format(const RexCore::WStringView& str, std::wformat_context& ctx) const {
+		return std::formatter<std::wstring_view, wchar_t>::format(std::wstring_view(str.Data(), str.Size()), ctx);
+	}
+};
+
+template <>
+struct std::formatter<RexCore::String<>> : public std::formatter<std::string_view> {
+	auto format(const RexCore::String<>& str, std::format_context& ctx) const {
+		return std::formatter<std::string_view>::format(std::string_view(str.Data(), str.Size()), ctx);
+	}
+};
+
+template <>
+struct std::formatter<RexCore::WString<>, wchar_t> : public  std::formatter<std::wstring_view, wchar_t> {
+	auto format(const RexCore::WString<>& str, std::wformat_context& ctx) const {
+		return std::formatter<std::wstring_view, wchar_t>::format(std::wstring_view(str.Data(), str.Size()), ctx);
+	}
+};
