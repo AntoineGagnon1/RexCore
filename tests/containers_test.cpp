@@ -936,6 +936,48 @@ void TestStringTypeBase(const ViewT& view, Args&& ...args)
 		}
 	}
 
+	{ // SplitInto
+		if constexpr (std::is_same_v<CharT, char>)
+		{
+			ViewT v("a,,b,c,", args...);
+			InplaceVector<StringView, 4> split;
+			v.SplitInto(split, ",");
+			ASSERT(split.Size() == 4);
+			ASSERT(split[0] == "a");
+			ASSERT(split[1] == "");
+			ASSERT(split[2] == "b");
+			ASSERT(split[3] == "c");
+		}
+		else
+		{
+			ViewT v(L"a,,b,c,", args...);
+			InplaceVector<WStringView, 4> split;
+			v.SplitInto(split, L",");
+			ASSERT(split.Size() == 4);
+			ASSERT(split[0] == L"a");
+			ASSERT(split[1] == L"");
+			ASSERT(split[2] == L"b");
+			ASSERT(split[3] == L"c");
+		}
+
+		if constexpr (std::is_same_v<CharT, char>)
+		{
+			ViewT v("abc", args...);
+			InplaceVector<StringView, 1> split;
+			v.SplitInto(split, ",");
+			ASSERT(split.Size() == 1);
+			ASSERT(split[0] == "abc");
+		}
+		else
+		{
+			ViewT v(L"abc", args...);
+			InplaceVector<WStringView, 1> split;
+			v.SplitInto(split, L",");
+			ASSERT(split.Size() == 1);
+			ASSERT(split[0] == L"abc");
+		}
+	}
+
 	// ==, !=
 	{
 		ASSERT(view == view);

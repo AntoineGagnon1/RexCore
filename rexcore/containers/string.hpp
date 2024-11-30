@@ -73,6 +73,31 @@ namespace RexCore
 			return self.Size() >= endsWith.Size() && self.SubStr(self.Size() - endsWith.Size()) == endsWith;
 		}
 
+		template<typename IntoT>
+		constexpr void SplitInto(this auto&& self, IntoT& into, StringViewT delimiter)
+		{
+			U64 start = 0;
+			U64 current = 0;
+			while (current < self.Size())
+			{
+				if (self.SubStr(current, delimiter.Size()) == delimiter)
+				{
+					into.PushBack(self.SubStr(start, current - start));
+					current += delimiter.Size();
+					start = current;
+				}
+				else
+				{
+					current++;
+				}
+			}
+
+			if (start < self.Size())
+			{
+				into.PushBack(self.SubStr(start));
+			}
+		}
+
 		template<typename A, typename B>
 			requires requires () {
 				{ std::declval<A>().Data() } -> std::convertible_to<const CharT*>;

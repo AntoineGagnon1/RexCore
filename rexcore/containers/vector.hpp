@@ -389,6 +389,8 @@ namespace RexCore
 				BaseT::PushBack(item);
 		}
 
+		~InplaceVectorBase() {}
+
 		[[nodiscard]] constexpr const T* Data() const { return m_data; }
 		[[nodiscard]] constexpr T* Data() { return m_data; }
 		[[nodiscard]] constexpr IndexT Size() const { return m_size; }
