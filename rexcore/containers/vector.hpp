@@ -253,7 +253,31 @@ namespace RexCore
 		using AllocatorType = Allocator;
 
 		REX_CORE_NO_COPY(VectorBase);
-		REX_CORE_DEFAULT_MOVE(VectorBase);
+
+		constexpr VectorBase(VectorBase&& other) noexcept
+			: m_allocator(other.m_allocator), m_size(other.m_size), m_capacity(other.m_capacity), m_data(other.m_data)
+		{
+			other.m_size = 0;
+			other.m_capacity = 0;
+			other.m_data = nullptr;
+		}
+
+		constexpr VectorBase& operator=(VectorBase&& other) noexcept {
+			if (this == &other)
+				return *this;
+
+			Free();
+
+			m_allocator = other.m_allocator;
+			m_size = other.m_size;
+			m_capacity = other.m_capacity;
+			m_data = other.m_data;
+
+			other.m_size = 0;
+			other.m_capacity = 0;
+			other.m_data = nullptr;
+			return *this;
+		}
 		
 		constexpr VectorBase(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
 			: m_allocator(allocator)
@@ -367,7 +391,54 @@ namespace RexCore
 		constexpr static IndexT InplaceCapacity = InplaceSize;
 
 		REX_CORE_NO_COPY(InplaceVectorBase);
-		REX_CORE_DEFAULT_MOVE(InplaceVectorBase);
+		
+
+		constexpr InplaceVectorBase(InplaceVectorBase&& other) noexcept
+			: m_allocator(other.m_allocator)
+		{
+			if (other.m_data == other.m_inplaceData)
+			{
+				for (auto& value : other)
+					BaseT::EmplaceBack(std::move(value));
+			}
+			else
+			{
+				m_size = other.m_size;
+				m_capacity = other.m_capacity;
+				m_data = other.m_data;
+			}
+
+			other.m_size = 0;
+			other.m_capacity = InplaceSize;
+			other.m_data = other.m_inplaceData;
+			MemSet(other.m_inplaceData, 0, sizeof(decltype(other.m_inplaceData)));
+		}
+
+		constexpr InplaceVectorBase& operator=(InplaceVectorBase&& other) noexcept {
+			if (this == &other)
+				return *this;
+
+			Free();
+
+			m_allocator = other.m_allocator;
+			if (other.m_data == other.m_inplaceData)
+			{
+				for (auto& value : other)
+					BaseT::EmplaceBack(std::move(value));
+			}
+			else
+			{
+				m_size = other.m_size;
+				m_capacity = other.m_capacity;
+				m_data = other.m_data;
+			}
+
+			other.m_size = 0;
+			other.m_capacity = InplaceSize;
+			other.m_data = other.m_inplaceData;
+			MemSet(other.m_inplaceData, 0, sizeof(decltype(other.m_inplaceData)));
+			return *this;
+		}
 
 		constexpr InplaceVectorBase(AllocatorRef<Allocator> allocator = AllocatorRefDefaultArg<Allocator>()) noexcept
 			: m_allocator(allocator)
@@ -498,7 +569,28 @@ namespace RexCore
 		constexpr static IndexT FixedSize = MaxSize;
 
 		REX_CORE_NO_COPY(FixedVectorBase);
-		REX_CORE_DEFAULT_MOVE(FixedVectorBase);
+
+		constexpr FixedVectorBase(FixedVectorBase&& other) noexcept
+			: m_size(0)
+		{
+			for (auto& value : other)
+				BaseT::EmplaceBack(std::move(value));
+
+			other.m_size = 0;
+		}
+
+		constexpr FixedVectorBase& operator=(FixedVectorBase&& other) noexcept {
+			if (this == &other)
+				return *this;
+
+			Free();
+
+			for (auto& value : other)
+				BaseT::EmplaceBack(std::move(value));
+
+			other.m_size = 0;
+			return *this;
+		}
 
 		constexpr FixedVectorBase() noexcept
 			: m_size(0) {}

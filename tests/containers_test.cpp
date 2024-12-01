@@ -657,6 +657,28 @@ void TestVectorBase(Args&& ...args)
 
 		TestSpanTypeBase(SpanT(vec.Data(), vec.Size()));
 	}
+
+	{ // Move
+		using ValueT = VecT::ValueType;
+		using IndexT = VecT::IndexType;
+		using SpanT = VecT::SpanType;
+
+		VecT vec = VecT(args...);
+		for (IndexT i = 0; i < 16; i++)
+			vec.EmplaceBack(ValueT(i));
+
+		VecT vec2 = std::move(vec);
+		ASSERT(vec.IsEmpty());
+		ASSERT(vec2.Size() == 16);
+		for (IndexT i = 0; i < 16; i++)
+			ASSERT(vec2[i] == ValueT(i));
+
+		VecT vec3 = std::move(vec2);
+		ASSERT(vec2.IsEmpty());
+		ASSERT(vec3.Size() == 16);
+		for (IndexT i = 0; i < 16; i++)
+			ASSERT(vec3[i] == ValueT(i));
+	}
 }
 
 template<typename VecT, typename ...Args>

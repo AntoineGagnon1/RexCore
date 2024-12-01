@@ -250,6 +250,11 @@ namespace RexCore
 		}
 
 		constexpr StringBase& operator=(StringBase&& other) noexcept {
+			if (this == &other)
+				return *this;
+
+			Free();
+
 			m_allocator = other.m_allocator;
 			m_size = other.m_size;
 			MemCopy(&other.m_bigSmallUnion, &m_bigSmallUnion, sizeof(m_bigSmallUnion));
