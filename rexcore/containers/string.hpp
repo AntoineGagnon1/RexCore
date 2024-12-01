@@ -4,9 +4,12 @@
 #include <rexcore/containers/span.hpp>
 #include <rexcore/allocators.hpp>
 
+#include <rexcore/vendors/unordered_dense.hpp> // for ankerl::unordered_dense::hash
+
 #include <cstring>
 #include <compare>
 #include <string_view>
+#include <ostream>
 
 namespace RexCore
 {
@@ -532,37 +535,37 @@ inline std::wostream& operator<<(std::wostream& os, const RexCore::WString<>& st
 }
 
 template <>
-struct std::hash<RexCore::StringView>
-{
-	std::size_t operator()(RexCore::StringView str) const
-	{
-		return std::hash<std::string_view>()(std::string_view{ str.Data(), str.Size() });
+struct ankerl::unordered_dense::hash<RexCore::StringView> {
+	using is_avalanching = void;
+
+	[[nodiscard]] RexCore::U64 operator()(const RexCore::StringView& str) const noexcept {
+		return ankerl::unordered_dense::hash<std::string_view>{}(std::string_view(str.Data(), str.Size()));
 	}
 };
 
 template <>
-struct std::hash<RexCore::WStringView>
-{
-	std::size_t operator()(RexCore::WStringView str) const
-	{
-		return std::hash<std::wstring_view>()(std::wstring_view{ str.Data(), str.Size() });
+struct ankerl::unordered_dense::hash<RexCore::String<>> {
+	using is_avalanching = void;
+
+	[[nodiscard]] RexCore::U64 operator()(const RexCore::String<>& str) const noexcept {
+		return ankerl::unordered_dense::hash<std::string_view>{}(std::string_view(str.Data(), str.Size()));
 	}
 };
 
 template <>
-struct std::hash<RexCore::String<>>
-{
-	std::size_t operator()(const RexCore::String<>& str) const
-	{
-		return std::hash<std::string_view>()(std::string_view{ str.Data(), str.Size() });
+struct ankerl::unordered_dense::hash<RexCore::WStringView> {
+	using is_avalanching = void;
+
+	[[nodiscard]] RexCore::U64 operator()(const RexCore::WStringView& str) const noexcept {
+		return ankerl::unordered_dense::hash<std::wstring_view>{}(std::wstring_view(str.Data(), str.Size()));
 	}
 };
 
 template <>
-struct std::hash<RexCore::WString<>>
-{
-	std::size_t operator()(const RexCore::WString<>& str) const
-	{
-		return std::hash<std::wstring_view>()(std::wstring_view{ str.Data(), str.Size() });
+struct ankerl::unordered_dense::hash<RexCore::WString<>> {
+	using is_avalanching = void;
+
+	[[nodiscard]] RexCore::U64 operator()(const RexCore::WString<>& str) const noexcept {
+		return ankerl::unordered_dense::hash<std::wstring_view>{}(std::wstring_view(str.Data(), str.Size()));
 	}
 };
