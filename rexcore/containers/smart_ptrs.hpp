@@ -15,17 +15,21 @@ namespace RexCore
 
 		REX_CORE_NO_COPY(UniquePtr);
 		
-		constexpr UniquePtr(UniquePtr&& other) noexcept
-			: m_ptr(other.m_ptr)
+		template<typename T2, IAllocator Allocator2>
+		constexpr UniquePtr(UniquePtr<T2, Allocator2>&& other) noexcept
+			: m_ptr(static_cast<T*>(other.m_ptr)), m_allocator(other.m_allocator)
 		{
 			other.m_ptr = nullptr;
 		}
 
-		constexpr UniquePtr& operator=(UniquePtr&& other) noexcept
+		template<typename T2, IAllocator Allocator2>
+		constexpr UniquePtr& operator=(UniquePtr<T2, Allocator2>&& other) noexcept
 		{
 			if (this != &other)
 			{
-				m_ptr = other.m_ptr;
+				Free();
+				m_ptr = static_cast<T*>(other.m_ptr);
+				m_allocator = other.m_allocator;
 				other.m_ptr = nullptr;
 			}
 			return *this;
@@ -94,6 +98,9 @@ namespace RexCore
 		[[nodiscard]] explicit constexpr operator bool() const noexcept { return m_ptr != nullptr; }
 
 	private:
+		template<typename T2, IAllocator Allocator>
+		friend class UniquePtr;
+
 		[[no_unique_address]] AllocatorRef<Allocator> m_allocator;
 		PtrType m_ptr;
 	};
