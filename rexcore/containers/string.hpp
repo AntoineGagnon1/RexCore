@@ -569,3 +569,15 @@ struct ankerl::unordered_dense::hash<RexCore::WString<>> {
 		return ankerl::unordered_dense::hash<std::wstring_view>{}(std::wstring_view(str.Data(), str.Size()));
 	}
 };
+
+namespace RexCore
+{
+	struct HeterogenousStringHash {
+		using is_transparent = void; // enable heterogeneous overloads
+		using is_avalanching = void; // mark class as high quality avalanching hash
+
+		[[nodiscard]] U64 operator()(StringView str) const noexcept {
+			return ankerl::unordered_dense::hash<StringView>{}(str);
+		}
+	};
+}

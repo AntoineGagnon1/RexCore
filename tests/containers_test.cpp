@@ -1352,6 +1352,39 @@ TEST_CASE("Containers/HashMap")
 	ASSERT(map.IsEmpty());
 
 	ASSERT(typeid(map.GetAllocator()) == typeid(DefaultAllocator));
+
+	{
+		StringHashMap<U32> strMap;
+		strMap.Insert("Hello", 1);
+		strMap.Insert(StringView("Hello2"), 2);
+		strMap.Insert(String("Hello3"), 3);
+
+		ASSERT(strMap["Hello"] == 1);
+		ASSERT(strMap[StringView("Hello")] == 1);
+		ASSERT(strMap[String("Hello")] == 1);
+
+		ASSERT(strMap.At("Hello") == 1);
+		ASSERT(strMap.At(StringView("Hello")) == 1);
+		ASSERT(strMap.At(String("Hello")) == 1);
+
+		ASSERT(strMap.Find("Hello")->second == 1);
+		ASSERT(strMap.Find(StringView("Hello"))->second == 1);
+		ASSERT(strMap.Find(String("Hello"))->second == 1);
+	}
+
+	{
+		StringHashMap<U32> strMap_;
+		strMap_.Insert("Hello", 1);
+		const StringHashMap<U32>& strMap = strMap_;
+
+		ASSERT(strMap.At("Hello") == 1);
+		ASSERT(strMap.At(StringView("Hello")) == 1);
+		ASSERT(strMap.At(String("Hello")) == 1);
+
+		ASSERT(strMap.Find("Hello")->second == 1);
+		ASSERT(strMap.Find(StringView("Hello"))->second == 1);
+		ASSERT(strMap.Find(String("Hello"))->second == 1);
+	}
 }
 
 TEST_CASE("Containers/HashSet")

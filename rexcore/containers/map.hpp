@@ -2,16 +2,18 @@
 #include <rexcore/core.hpp>
 #include <rexcore/allocators.hpp>
 #include <rexcore/concepts.hpp>
+#include <rexcore/containers/string.hpp>
 
 #include <rexcore/vendors/unordered_dense.hpp>
 
 namespace RexCore
 {
 	template<typename Key, typename Value, IAllocator Allocator = DefaultAllocator, typename Hash = ankerl::unordered_dense::hash<Key>>
-	class HashMap : ankerl::unordered_dense::map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key,Value>, Allocator>>
+	class HashMap : ankerl::unordered_dense::map<Key, Value, Hash, std::equal_to<>, StdAllocatorAdaptor<std::pair<Key,Value>, Allocator>>
 	{
 	private:
-		using Impl = ankerl::unordered_dense::map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key, Value>, Allocator>>;
+		using Impl = ankerl::unordered_dense::map<Key, Value, Hash, std::equal_to<>, StdAllocatorAdaptor<std::pair<Key, Value>, Allocator>>;
+		using KeyEqual = std::equal_to<Key>;
 
 	public:
 		using Iterator = typename Impl::iterator;
@@ -33,23 +35,24 @@ namespace RexCore
 		[[nodiscard]] U64 Size() const { return Impl::size(); }
 		[[nodiscard]] bool IsEmpty() const { return Size() == 0; }
 
-		Value& operator[](const Key& key) { return Impl::operator[](key); }
-		Value& operator[](Key&& key) { return Impl::operator[](std::move(key)); }
+		using Impl::operator[];
 
-		Value& At(const Key& key) {
-			auto found = Impl::find(key);
+		decltype(auto) At(auto&& key)
+		{
+			auto found = Impl::find(std::forward<decltype(key)>(key));
 			REX_CORE_ASSERT(found != Impl::end(), "Value not found ! use Find() instead");
 			return found->second;
 		}
 
-		const Value& At(const Key& key) const {
-			auto found = Impl::find(key);
+		decltype(auto) At(auto&& key) const
+		{
+			auto found = Impl::find(std::forward<decltype(key)>(key));
 			REX_CORE_ASSERT(found != Impl::end(), "Value not found ! use Find() instead");
 			return found->second;
 		}
 
-		[[nodiscard]] Iterator Find(const Key& key) { return Impl::find(key); }
-		[[nodiscard]] ConstIterator Find(const Key& key) const { return Impl::find(key); }
+		[[nodiscard]] decltype(auto) Find(auto&& key) { return Impl::find(std::forward<decltype(key)>(key)); }
+		[[nodiscard]] decltype(auto) Find(auto&& key) const { return Impl::find(std::forward<decltype(key)>(key)); }
 
 		[[nodiscard]] bool Contains(const Key& key)
 		{
@@ -109,4 +112,7 @@ namespace RexCore
 			: Impl(impl)
 		{}
 	};
+
+	template<typename Value, IAllocator Allocator = DefaultAllocator>
+	using StringHashMap = HashMap<String<>, Value, Allocator, HeterogenousStringHash>;
 }
