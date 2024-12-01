@@ -1370,6 +1370,10 @@ TEST_CASE("Containers/HashMap")
 		ASSERT(strMap.Find("Hello")->second == 1);
 		ASSERT(strMap.Find(StringView("Hello"))->second == 1);
 		ASSERT(strMap.Find(String("Hello"))->second == 1);
+
+		ASSERT(strMap.Contains("Hello"));
+		ASSERT(strMap.Contains(StringView("Hello")));
+		ASSERT(strMap.Contains(String("Hello")));
 	}
 
 	{
@@ -1384,6 +1388,10 @@ TEST_CASE("Containers/HashMap")
 		ASSERT(strMap.Find("Hello")->second == 1);
 		ASSERT(strMap.Find(StringView("Hello"))->second == 1);
 		ASSERT(strMap.Find(String("Hello"))->second == 1);
+
+		ASSERT(strMap.Contains("Hello"));
+		ASSERT(strMap.Contains(StringView("Hello")));
+		ASSERT(strMap.Contains(String("Hello")));
 	}
 }
 

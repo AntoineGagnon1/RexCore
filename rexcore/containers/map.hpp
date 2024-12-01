@@ -54,10 +54,7 @@ namespace RexCore
 		[[nodiscard]] decltype(auto) Find(auto&& key) { return Impl::find(std::forward<decltype(key)>(key)); }
 		[[nodiscard]] decltype(auto) Find(auto&& key) const { return Impl::find(std::forward<decltype(key)>(key)); }
 
-		[[nodiscard]] bool Contains(const Key& key)
-		{
-			return Impl::find(key) != Impl::end();
-		}
+		[[nodiscard]] bool Contains(auto&& key) const { return Impl::find(std::forward<decltype(key)>(key)) != Impl::end(); }
 
 		void Reserve(U64 size) { Impl::reserve(size); }
 
