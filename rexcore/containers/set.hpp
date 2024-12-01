@@ -3,17 +3,15 @@
 #include <rexcore/allocators.hpp>
 #include <rexcore/concepts.hpp>
 
-#pragma warning(push, 0)
-#include <rexcore/vendors/flat_hash_map.hpp>
-#pragma warning(pop)
+#include <rexcore/vendors/unordered_dense.hpp>
 
 namespace RexCore
 {
 	template<typename Key, IAllocator Allocator = DefaultAllocator, typename Hash = std::hash<Key>>
-	class HashSet : ska::flat_hash_set<Key, Hash, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>
+	class HashSet : ankerl::unordered_dense::set<Key, Hash, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>
 	{
 	private:
-		using Impl = ska::flat_hash_set<Key, Hash, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>;
+		using Impl = ankerl::unordered_dense::set<Key, Hash, std::equal_to<Key>, StdAllocatorAdaptor<Key, Allocator>>;
 
 	public:
 		using Iterator = typename Impl::iterator;

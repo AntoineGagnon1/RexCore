@@ -3,19 +3,15 @@
 #include <rexcore/allocators.hpp>
 #include <rexcore/concepts.hpp>
 
-#pragma warning(push, 0)
-#include <stdexcept>
-#include <rexcore/vendors/bytell_hash_map.hpp>
-#pragma warning(pop)
+#include <rexcore/vendors/unordered_dense.hpp>
 
 namespace RexCore
 {
-	template<typename Key, typename Value, IAllocator Allocator = DefaultAllocator, typename Hash = std::hash<Key>>
-	class HashMap : ska::bytell_hash_map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key,Value>, Allocator>>
+	template<typename Key, typename Value, IAllocator Allocator = DefaultAllocator, typename Hash = ankerl::unordered_dense::hash<Key>>
+	class HashMap : ankerl::unordered_dense::map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key,Value>, Allocator>>
 	{
 	private:
-		using Impl = ska::bytell_hash_map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key, Value>, Allocator>>;
-		constexpr static int Impl_BlockSize = ska::detailv8::CalculateBytellBlockSize<Key, Value>::value; // For natvis
+		using Impl = ankerl::unordered_dense::map<Key, Value, Hash, std::equal_to<Key>, StdAllocatorAdaptor<std::pair<Key, Value>, Allocator>>;
 
 	public:
 		using Iterator = typename Impl::iterator;
