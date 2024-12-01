@@ -59,10 +59,7 @@ namespace RexCore
 		void Reserve(U64 size) { Impl::reserve(size); }
 
 		template<typename ...Args>
-		bool Insert(Args&& ...args)
-		{
-			return Impl::emplace(std::forward<Args>(args)...).second;
-		}
+		decltype(auto) Insert(Args&& ...args) { return Impl::emplace(std::forward<Args>(args)...); }
 
 		template<typename ...Args>
 		void InsertOrAssign(const Key& key, Args&& ...args)

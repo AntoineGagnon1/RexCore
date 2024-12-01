@@ -90,9 +90,9 @@ namespace RexCore
 			return;
 
 #ifdef REX_CORE_TRACK_ALLOCS_TRACE
-		const bool inserted = s_aliveAlloc->Insert(ptr, Alloc{ size, StackTraceType::current()});
+		const bool inserted = s_aliveAlloc->Insert(ptr, Alloc{ size, StackTraceType::current()}).second;
 #else
-		const bool inserted = s_aliveAlloc->Insert(ptr, Alloc{ size, loc });
+		const bool inserted = s_aliveAlloc->Insert(ptr, Alloc{ size, loc }).second;
 #endif
 
 		if (!inserted)
