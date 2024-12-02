@@ -25,6 +25,12 @@ namespace RexCore::Math
 		return a > b ? a : b;
 	}
 
+	template<typename T>
+	constexpr T Abs(T a) noexcept
+	{
+		return a >= static_cast<T>(0) ? a : -a;
+	}
+
 	template<std::integral T>
 	constexpr T MinValue() noexcept
 	{
