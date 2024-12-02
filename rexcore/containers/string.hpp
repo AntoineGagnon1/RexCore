@@ -13,34 +13,24 @@
 
 namespace RexCore
 {
-	inline U64 StringLength(const char* str)
+	inline constexpr U64 StringLength(const char* str)
 	{
-		return std::strlen(str);
+		return std::char_traits<char>::length(str);
 	}
 
-	inline U64 StringLength(const wchar_t* wstr)
+	inline constexpr U64 StringLength(const wchar_t* wstr)
 	{
-		return std::wcslen(wstr);
+		return std::char_traits<wchar_t>::length(wstr);
 	}
 
-	inline S32 StringCompare(const char* a, const char* b)
+	inline constexpr S32 StringCompare(const char* a, const char* b, U64 length)
 	{
-		return std::strcmp(a, b);
+		return std::char_traits<char>::compare(a, b, length);
 	}
 
-	inline S32 StringCompare(const wchar_t* a, const wchar_t* b)
+	inline constexpr S32 StringCompare(const wchar_t* a, const wchar_t* b, U64 length)
 	{
-		return std::wcscmp(a, b);
-	}
-
-	inline S32 StringCompare(const char* a, const char* b, U64 length)
-	{
-		return std::strncmp(a, b, length);
-	}
-
-	inline S32 StringCompare(const wchar_t* a, const wchar_t* b, U64 length)
-	{
-		return std::wcsncmp(a, b, length);
+		return std::char_traits<wchar_t>::compare(a, b, length);
 	}
 
 	namespace Internal
