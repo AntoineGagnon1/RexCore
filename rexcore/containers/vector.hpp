@@ -153,7 +153,7 @@ namespace RexCore
 				self.Reserve(capacity == 0 ? InitialSize : capacity * GrowthFactor);
 
 			for (IndexT i = size; i > index; i--)
-				self.Data()[i] = std::move(self.Data()[i - 1]);
+				new (&self.Data()[i]) T(std::move(self.Data()[i - 1]));
 
 			self.Data()[index] = RexCore::Clone(value);
 			self.SetSize(size + 1);
@@ -171,7 +171,7 @@ namespace RexCore
 				self.Reserve(capacity == 0 ? InitialSize : capacity * GrowthFactor);
 
 			for (IndexT i = size; i > index; i--)
-				self.Data()[i] = std::move(self.Data()[i - 1]);
+				new (&self.Data()[i]) T(std::move(self.Data()[i - 1]));
 
 			new (&self.Data()[index]) T(std::forward<Args>(constructorArgs)...);
 			self.SetSize(size + 1);
@@ -183,7 +183,7 @@ namespace RexCore
 			const IndexT size = self.Size();
 			REX_CORE_ASSERT(size > 0);
 
-			T value = std::move(self.Data()[size - 1]);
+			T value(std::move(self.Data()[size - 1]));
 			self.Data()[size - 1].~T(); // TODO : probably not necessary, moved object should do nothing in the destructor
 			self.SetSize(size - 1);
 			return value;
@@ -199,7 +199,7 @@ namespace RexCore
 			self.Data()[index].~T();
 
 			if (index != size - 1)
-				self.Data()[index] = std::move(self.Data()[size - 1]);
+				new (&self.Data()[index]) T(std::move(self.Data()[size - 1]));
 
 			self.SetSize(size - 1);
 		}
@@ -219,7 +219,7 @@ namespace RexCore
 			self.Data()[index].~T();
 
 			for (IndexT i = index; i < size - 1; i++)
-				self.Data()[i] = std::move(self.Data()[i + 1]);
+				new (&self.Data()[i]) T(std::move(self.Data()[i + 1]));
 
 			self.SetSize(size - 1);
 		}
@@ -314,7 +314,7 @@ namespace RexCore
 			if (m_data != nullptr)
 			{
 				for (IndexT i = 0; i < m_size; i++)
-					newData[i] = std::move(m_data[i]);
+					new (&newData[i]) T(std::move(m_data[i]));
 				m_allocator.Free(m_data, m_capacity * sizeof(T));
 			}
 
@@ -333,7 +333,7 @@ namespace RexCore
 			{
 				T* newData = static_cast<T*>(m_allocator.Allocate(newSize * sizeof(T), alignof(T)));
 				for (IndexT i = 0; i < newSize; i++)
-					newData[i] = std::move(m_data[i]);
+					new (&newData[i]) T(std::move(m_data[i]));
 
 				for (IndexT i = newSize; i < m_size; i++)
 					m_data[i].~T();
@@ -478,7 +478,7 @@ namespace RexCore
 			if (m_data != nullptr)
 			{
 				for (IndexT i = 0; i < m_size; i++)
-					newData[i] = std::move(m_data[i]);
+					new (&newData[i]) T(std::move(m_data[i]));
 
 				if (m_data != m_inplaceData)
 					m_allocator.Free(m_data, m_capacity * sizeof(T));
@@ -507,7 +507,7 @@ namespace RexCore
 				{
 					T* newData = newSize <= InplaceSize ? m_inplaceData : static_cast<T*>(m_allocator.Allocate(newSize * sizeof(T), alignof(T)));
 					for (IndexT i = 0; i < newSize; i++)
-						newData[i] = std::move(m_data[i]);
+						new (&newData[i]) T(std::move(m_data[i]));
 
 					for (IndexT i = newSize; i < m_size; i++)
 						m_data[i].~T();
