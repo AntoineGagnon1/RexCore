@@ -3,6 +3,7 @@
 #include <rexcore/containers/vector.hpp>
 #include <rexcore/containers/span.hpp>
 #include <rexcore/allocators.hpp>
+#include <rexcore/iterators.hpp>
 
 #include <rexcore/vendors/unordered_dense.hpp> // for ankerl::unordered_dense::hash
 
@@ -197,6 +198,11 @@ namespace RexCore
 
 		[[nodiscard]] constexpr ConstIterator End() const { return m_data + m_size; }
 		[[nodiscard]] constexpr ConstIterator CEnd() const { return m_data + m_size; }
+
+		[[nodiscard]] constexpr operator Iter::ContainerView<ConstIterator>() const
+		{
+			return Iter::ContainerView(CBegin(), CEnd());
+		}
 
 	public:
 		// For ranged-based for and other STL functions

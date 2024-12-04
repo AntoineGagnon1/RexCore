@@ -77,7 +77,7 @@ namespace RexCore::Iter
 	};
 
 	template<typename T>
-	using ViewGetIteratorType = typename T::Iterator;
+	using ViewGetIteratorType = decltype(std::declval<T>().Begin());
 
 	template<IIterator It>
 	using IteratorGetValueType = decltype(*std::declval<It>()); // Result of calling operator* on the iterator type
@@ -178,7 +178,7 @@ namespace RexCore::Iter
 
 	// Deduction guide so calls to Zip with containers can be deduced to Views
 	template <typename... Containers>
-	Zip(Containers...) -> Zip<std::conditional_t<IView<Containers>, Containers, ContainerView<typename Containers::Iterator>>...>;
+	Zip(Containers...) -> Zip<std::conditional_t<IView<Containers>, Containers, ContainerView<ViewGetIteratorType<Containers>>>...>;
 
 	template<std::integral ValueT>
 	class IntegerIterator
@@ -264,7 +264,7 @@ namespace RexCore::Iter
 	};
 
 	template <typename... Containers>
-	Enumerate(Containers...) -> Enumerate<std::conditional_t<IView<Containers>, Containers, ContainerView<typename Containers::Iterator>>...>;
+	Enumerate(Containers...) -> Enumerate<std::conditional_t<IView<Containers>, Containers, ContainerView<ViewGetIteratorType<Containers>>>...>;
 
 	// Safe with views that contain less than toSkip elements
 	template<IView View>
@@ -295,6 +295,6 @@ namespace RexCore::Iter
 	};
 
 	template<typename Container>
-	Skip(U64, Container) -> Skip<std::conditional_t<IView<Container>, Container, ContainerView<typename Container::Iterator>>>;
+	Skip(U64, Container) -> Skip<std::conditional_t<IView<Container>, Container, ContainerView<ViewGetIteratorType<Container>>>>;
 
 }
