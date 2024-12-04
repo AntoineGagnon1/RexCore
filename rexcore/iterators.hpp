@@ -4,18 +4,9 @@
 
 namespace RexCore::Iter
 {
-	template<typename T>
-	using GetValueType = typename T::ValueType;
-
-	template<typename T>
-	using GetIndexType = typename T::IndexType;
-
-	template<typename T>
-	using GetIteratorType = typename T::Iterator;
-
 	namespace Details {
 		template <typename ... Args, std::size_t ... Index>
-		inline bool MatchAnyImpl(std::tuple<Args...> const& lhs, std::tuple<Args...> const& rhs, std::index_sequence<Index...>)
+		inline constexpr bool MatchAnyImpl(std::tuple<Args...> const& lhs, std::tuple<Args...> const& rhs, std::index_sequence<Index...>)
 		{
 			auto result = false;
 			result = (... | (std::get<Index>(lhs) == std::get<Index>(rhs)));
@@ -23,7 +14,7 @@ namespace RexCore::Iter
 		}
 
 		template <typename ... Args>
-		inline bool MatchAny(std::tuple<Args...> const& lhs, std::tuple<Args...> const& rhs)
+		inline constexpr bool MatchAny(std::tuple<Args...> const& lhs, std::tuple<Args...> const& rhs)
 		{
 			return MatchAnyImpl(lhs, rhs, std::index_sequence_for<Args...>{});
 		}
@@ -42,7 +33,7 @@ namespace RexCore::Iter
 		template<typename ...T>
 		using BiggestType = typename BiggestTypeImpl<T...>::Type;
 	}
-
+	
 	template<typename T>
 	[[nodiscard]] constexpr decltype(auto) Begin(T& container)
 	{
@@ -66,89 +57,141 @@ namespace RexCore::Iter
 	{
 		return container.End();
 	}
+	
+	// A view is a copyable, iterable object with an Iterator subtypes
+	template<typename T>
+	concept IView = std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T> && requires {
+		typename T::Iterator;
+		{ std::declval<T>().Begin() } -> std::convertible_to<typename T::Iterator>;
+		{ std::declval<T>().End() } -> std::convertible_to<typename T::Iterator>;
+	};
 
-	template<typename ...Types>
+	// An iterator is a copyable object with operator*, operator++, operator== and operator!=
+	template<typename T>
+	concept IIterator = std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T> && requires (T& t, T& t2) {
+		{ *t };
+		{ t++ } -> std::convertible_to<T>;
+		{ ++t } -> std::convertible_to<T>;
+		{ t == t2 } -> std::convertible_to<bool>;
+		{ t != t2 } -> std::convertible_to<bool>;
+	};
+
+	template<typename T>
+	using ViewGetIteratorType = typename T::Iterator;
+
+	template<IIterator It>
+	using IteratorGetValueType = decltype(*std::declval<It>()); // Result of calling operator* on the iterator type
+
+	template<IIterator IteratorT>
+	class ContainerView
+	{
+	public:
+		using Iterator = IteratorT;
+
+		constexpr ContainerView(IteratorT begin, IteratorT end)
+			: m_begin(begin), m_end(end)
+		{
+			static_assert(IView<ContainerView<IteratorT>>);
+		}
+
+		[[nodiscard]] constexpr Iterator Begin() noexcept { return m_begin; }
+		[[nodiscard]] constexpr Iterator End() noexcept { return m_end; }
+		[[nodiscard]] constexpr Iterator begin() noexcept { return m_begin; }
+		[[nodiscard]] constexpr Iterator end() noexcept { return m_end; }
+	private:
+		IteratorT m_begin, m_end;
+	};
+
+	template<IIterator ...Iterators>
 	struct ZipIterator
 	{
 	public:
-		using ValueType = std::tuple<std::add_lvalue_reference_t<GetValueType<Types>>...>;
+		using ValueType = std::tuple<IteratorGetValueType<Iterators>...>;
 
 		// For std
 		using value_type = ValueType;
 
-		ZipIterator(std::tuple<GetIteratorType<Types>...> iterators) noexcept
+		constexpr ZipIterator(std::tuple<Iterators...> iterators) noexcept
 			: m_iterators(iterators)
-		{}
-
-		[[nodiscard]] friend bool operator==(const ZipIterator& lhs, const ZipIterator& rhs)
 		{
-			// or instead of and to make the for each loops stop when one of the iterators is at the end
+			static_assert(IIterator<ZipIterator<Iterators...>>);
+		}
+
+		[[nodiscard]] friend constexpr bool operator==(const ZipIterator& lhs, const ZipIterator& rhs)
+		{
+			// || instead of && to make foreach loops stop when one of the iterators is at the end
 			return Details::MatchAny(lhs.m_iterators, rhs.m_iterators);
 		}
-		[[nodiscard]] friend bool operator!=(const ZipIterator& lhs, const ZipIterator& rhs)
+		[[nodiscard]] friend constexpr bool operator!=(const ZipIterator& lhs, const ZipIterator& rhs)
 		{
 			return !(lhs == rhs);
 		}
 
-		ZipIterator& operator++()
+		constexpr ZipIterator& operator++()
 		{
 			std::apply([](auto& ...iter) { ((++iter), ...); }, m_iterators);
 			return *this;
 		}
-		ZipIterator operator++(int)
+		constexpr ZipIterator operator++(int)
 		{
 			ZipIterator copy(*this);
 			++*this;
 			return copy;
 		}
 
-		[[nodiscard]] ValueType operator*()
+		[[nodiscard]] constexpr ValueType operator*()
 		{
 			return std::apply([](auto& ...iter) { return ValueType(*iter...); }, m_iterators);
 		}
 
 	private:
-		std::tuple<GetIteratorType<Types>...> m_iterators;
+		std::tuple<Iterators...> m_iterators;
 	};
 
-	template<typename ...Types>
+	template<IView ...Views>
 	class Zip
 	{
 	public:
-		using Iterator = ZipIterator<Types...>;
+		using Iterator = ZipIterator<ViewGetIteratorType<Views>...>;
 
-		Zip(Types& ...containers) noexcept
-			: m_containers(containers...)
-		{}
+		Zip(Views ...views) noexcept
+			: m_views(views...)
+		{
+			static_assert(IView<Zip<Views...>>);
+		}
 
 		[[nodiscard]] Iterator Begin() noexcept
 		{
-			return Iterator(std::apply([](auto& ...container) { return std::make_tuple(Iter::Begin(container)...); }, m_containers));
+			return Iterator(std::apply([](auto& ...view) { return std::make_tuple(Iter::Begin(view)...); }, m_views));
 		}
 		[[nodiscard]] Iterator End() noexcept
 		{
-			return Iterator(std::apply([](auto& ...container) { return std::make_tuple(Iter::End(container)...); }, m_containers));
+			return Iterator(std::apply([](auto& ...view) { return std::make_tuple(Iter::End(view)...); }, m_views));
 		}
 
 		[[nodiscard]] Iterator begin() noexcept { return Begin(); }
 		[[nodiscard]] Iterator end() noexcept { return End(); }
 
 	private:
-		std::tuple<Types&...> m_containers;
+		std::tuple<Views...> m_views;
 	};
 
-	template<typename ValueT>
+	// Deduction guide so calls to Zip with containers can be deduced to Views
+	template <typename... Containers>
+	Zip(Containers...) -> Zip<std::conditional_t<IView<Containers>, Containers, ContainerView<typename Containers::Iterator>>...>;
+
+	template<std::integral ValueT>
 	class IntegerIterator
 	{
 	public:
-		using ValueType = ValueT;
-
 		// For std
-		using value_type = ValueType;
+		using value_type = ValueT;
 
 		IntegerIterator(ValueT value)
 			: m_value(value)
-		{}
+		{
+			static_assert(IIterator<IntegerIterator<ValueT>>);
+		}
 
 		[[nodiscard]] friend bool operator==(const IntegerIterator& lhs, const IntegerIterator& rhs) { return lhs.m_value == rhs.m_value; }
 		[[nodiscard]] friend bool operator!=(const IntegerIterator& lhs, const IntegerIterator& rhs) { return !(lhs == rhs); }
@@ -165,33 +208,25 @@ namespace RexCore::Iter
 			return copy;
 		}
 
-		[[nodiscard]] const ValueType& operator*() const
-		{
-			return m_value;
-		}
-
-		[[nodiscard]] ValueType& operator*()
-		{
-			return m_value;
-		}
+		[[nodiscard]] const ValueT& operator*() const { return m_value; }
+		[[nodiscard]] ValueT& operator*() { return m_value; }
 
 
 	private:
 		ValueT m_value;
 	};
 
-	template<typename ValueT>
+	template<std::integral ValueT>
 	class IntegerRange
 	{
 	public:
 		using Iterator = IntegerIterator<ValueT>;
-		using ValueType = ValueT;
 
-		IntegerRange() : IntegerRange(ValueT(0), ValueT(0)) {}
-
-		IntegerRange(ValueT start, ValueT end)
-			: m_begin(start), m_end(end)
-		{}
+		IntegerRange(ValueT startInclusive, ValueT endExclusive)
+			: m_begin(startInclusive), m_end(endExclusive)
+		{
+			static_assert(IView<IntegerRange<ValueT>>);
+		}
 
 		[[nodiscard]] Iterator Begin() noexcept { return Iterator(m_begin); }
 		[[nodiscard]] Iterator End() noexcept { return Iterator(m_end); }
@@ -203,16 +238,20 @@ namespace RexCore::Iter
 		ValueT m_end;
 	};
 
-	template<typename ...ArrayT>
+	template<IView ...Views>
 	class Enumerate
 	{
-		using ZipType = Zip<IntegerRange<Details::BiggestType<GetIndexType<ArrayT>...>>, ArrayT...>;
-		using IndexType = Details::BiggestType<GetIndexType<ArrayT>...>;
-		using Iterator = typename ZipType::Iterator;
+		using ZipType = Zip<IntegerRange<U64>, Views...>;
+		using IndexType = U64;
 	public:
-		Enumerate(ArrayT& ...arrays)
-			: m_integerRange(static_cast<IndexType>(0), MinSize(arrays...)), m_zip(m_integerRange, arrays...)
-		{}
+		using Iterator = typename ZipType::Iterator;
+		
+		Enumerate(Views ...arrays)
+			: m_integerRange(static_cast<IndexType>(0), Math::MaxValue<IndexType>()), m_zip(m_integerRange, arrays...)
+		{
+			static_assert(sizeof ...(Views) >= 1, "You must pass at least one view to RexCore::Enumerate");
+			static_assert(IView<Enumerate<Views...>>);
+		}
 
 		[[nodiscard]] Iterator Begin() noexcept { return m_zip.Begin(); }
 		[[nodiscard]] Iterator End() noexcept { return m_zip.End(); }
@@ -220,14 +259,42 @@ namespace RexCore::Iter
 		[[nodiscard]] Iterator end() noexcept { return End(); }
 
 	private:
-		IndexType MinSize(const ArrayT& ...arrays) const
-		{
-			IndexType minSize = Math::MaxValue<IndexType>();
-			([&](const ArrayT& arr) { minSize = Math::Min(minSize, arr.Size()); }(arrays), ...);
-			return minSize;
-		}
-
 		IntegerRange<IndexType> m_integerRange;
 		ZipType m_zip;
 	};
+
+	template <typename... Containers>
+	Enumerate(Containers...) -> Enumerate<std::conditional_t<IView<Containers>, Containers, ContainerView<typename Containers::Iterator>>...>;
+
+	// Safe with views that contain less than toSkip elements
+	template<IView View>
+	class Skip
+	{
+	public:
+		using Iterator = ViewGetIteratorType<View>;
+
+		Skip(U64 toSkip, View view)
+			: m_view(view)
+		{
+			static_assert(IView<Skip<View>>);
+
+			m_begin = m_view.Begin();
+			auto end = m_view.End();
+			for (U64 i = 0; i < toSkip && m_begin != end; i++)
+				++m_begin;
+		}
+
+		[[nodiscard]] Iterator Begin() noexcept {  return m_begin; }
+		[[nodiscard]] Iterator End() noexcept { return m_view.End(); }
+		[[nodiscard]] Iterator begin() noexcept { return m_begin; }
+		[[nodiscard]] Iterator end() noexcept { return End(); }
+
+	private:
+		View m_view;
+		Iterator m_begin;
+	};
+
+	template<typename Container>
+	Skip(U64, Container) -> Skip<std::conditional_t<IView<Container>, Container, ContainerView<typename Container::Iterator>>>;
+
 }

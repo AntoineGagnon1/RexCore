@@ -3,6 +3,7 @@
 #include <rexcore/allocators.hpp>
 #include <rexcore/core.hpp>
 #include <rexcore/concepts.hpp>
+#include <rexcore/iterators.hpp>
 #include <rexcore/containers/span.hpp>
 
 #include <iterator>
@@ -227,6 +228,16 @@ namespace RexCore
 		constexpr void RemoveOrdered(this auto&& self, const T& value)
 		{
 			self.RemoveAtOrdered(self.IndexOf(value));
+		}
+
+		[[nodiscard]] constexpr operator Iter::ContainerView<ConstIterator>() const
+		{
+			return Iter::ContainerView(CBegin(), CEnd());
+		}
+
+		[[nodiscard]] constexpr operator Iter::ContainerView<Iterator>()
+		{
+			return Iter::ContainerView(Begin(), End());
 		}
 
 	public:
