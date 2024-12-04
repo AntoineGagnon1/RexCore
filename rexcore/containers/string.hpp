@@ -67,6 +67,16 @@ namespace RexCore
 			return self.Size() >= endsWith.Size() && self.SubStr(self.Size() - endsWith.Size()) == endsWith;
 		}
 
+		constexpr bool RemovePrefix(this auto&& self, StringViewT prefix)
+		{
+			if (self.StartsWith(prefix))
+			{
+				self = self.SubStr(prefix.Size());
+				return true;
+			}
+			return false;
+		}
+
 		template<typename IntoT>
 		constexpr void SplitInto(this auto&& self, IntoT& into, CharT delimiter)
 		{
