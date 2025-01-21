@@ -77,7 +77,7 @@ namespace RexCore::Iter
 	};
 
 	template<typename T>
-	using ViewGetIteratorType = decltype(std::declval<T>().Begin());
+	using ViewGetIteratorType = decltype(std::declval<std::add_const_t<T>>().Begin());
 
 	template<IIterator It>
 	using IteratorGetValueType = decltype(*std::declval<It>()); // Result of calling operator* on the iterator type
@@ -94,10 +94,10 @@ namespace RexCore::Iter
 			static_assert(IView<ContainerView<IteratorT>>);
 		}
 
-		[[nodiscard]] constexpr Iterator Begin() noexcept { return m_begin; }
-		[[nodiscard]] constexpr Iterator End() noexcept { return m_end; }
-		[[nodiscard]] constexpr Iterator begin() noexcept { return m_begin; }
-		[[nodiscard]] constexpr Iterator end() noexcept { return m_end; }
+		[[nodiscard]] constexpr Iterator Begin() const noexcept { return m_begin; }
+		[[nodiscard]] constexpr Iterator End() const noexcept { return m_end; }
+		[[nodiscard]] constexpr Iterator begin() const noexcept { return m_begin; }
+		[[nodiscard]] constexpr Iterator end() const noexcept { return m_end; }
 	private:
 		IteratorT m_begin, m_end;
 	};
@@ -160,17 +160,17 @@ namespace RexCore::Iter
 			static_assert(IView<Zip<Views...>>);
 		}
 
-		[[nodiscard]] Iterator Begin() noexcept
+		[[nodiscard]] Iterator Begin() const noexcept
 		{
 			return Iterator(std::apply([](auto& ...view) { return std::make_tuple(Iter::Begin(view)...); }, m_views));
 		}
-		[[nodiscard]] Iterator End() noexcept
+		[[nodiscard]] Iterator End() const noexcept
 		{
 			return Iterator(std::apply([](auto& ...view) { return std::make_tuple(Iter::End(view)...); }, m_views));
 		}
 
-		[[nodiscard]] Iterator begin() noexcept { return Begin(); }
-		[[nodiscard]] Iterator end() noexcept { return End(); }
+		[[nodiscard]] Iterator begin() const noexcept { return Begin(); }
+		[[nodiscard]] Iterator end() const noexcept { return End(); }
 
 	private:
 		std::tuple<Views...> m_views;
@@ -178,7 +178,7 @@ namespace RexCore::Iter
 
 	// Deduction guide so calls to Zip with containers can be deduced to Views
 	template <typename... Containers>
-	Zip(Containers...) -> Zip<std::conditional_t<IView<Containers>, Containers, ContainerView<ViewGetIteratorType<Containers>>>...>;
+	Zip(Containers...) -> Zip<std::conditional_t<IView<Containers>, std::remove_reference_t<Containers>, ContainerView<ViewGetIteratorType<Containers>>>...>;
 
 	template<std::integral ValueT>
 	class IntegerIterator
@@ -228,14 +228,14 @@ namespace RexCore::Iter
 			static_assert(IView<IntegerRange<ValueT>>);
 		}
 
-		[[nodiscard]] Iterator Begin() noexcept { return Iterator(m_begin); }
-		[[nodiscard]] Iterator End() noexcept { return Iterator(m_end); }
-		[[nodiscard]] Iterator begin() noexcept { return Begin(); }
-		[[nodiscard]] Iterator end() noexcept { return End(); }
+		[[nodiscard]] Iterator Begin() const noexcept { return m_begin; }
+		[[nodiscard]] Iterator End() const noexcept { return m_end; }
+		[[nodiscard]] Iterator begin() const noexcept { return Begin(); }
+		[[nodiscard]] Iterator end() const noexcept { return End(); }
 
 	private:
-		ValueT m_begin;
-		ValueT m_end;
+		Iterator m_begin;
+		Iterator m_end;
 	};
 
 	template<IView ...Views>
@@ -253,10 +253,10 @@ namespace RexCore::Iter
 			static_assert(IView<Enumerate<Views...>>);
 		}
 
-		[[nodiscard]] Iterator Begin() noexcept { return m_zip.Begin(); }
-		[[nodiscard]] Iterator End() noexcept { return m_zip.End(); }
-		[[nodiscard]] Iterator begin() noexcept { return Begin(); }
-		[[nodiscard]] Iterator end() noexcept { return End(); }
+		[[nodiscard]] Iterator Begin() const noexcept { return m_zip.Begin(); }
+		[[nodiscard]] Iterator End() const noexcept { return m_zip.End(); }
+		[[nodiscard]] Iterator begin() const noexcept { return Begin(); }
+		[[nodiscard]] Iterator end() const noexcept { return End(); }
 
 	private:
 		IntegerRange<IndexType> m_integerRange;
@@ -264,7 +264,7 @@ namespace RexCore::Iter
 	};
 
 	template <typename... Containers>
-	Enumerate(Containers...) -> Enumerate<std::conditional_t<IView<Containers>, Containers, ContainerView<ViewGetIteratorType<Containers>>>...>;
+	Enumerate(Containers...) -> Enumerate<std::conditional_t<IView<Containers>, std::remove_reference_t<Containers>, ContainerView<ViewGetIteratorType<Containers>>>...>;
 
 	// Safe with views that contain less than toSkip elements
 	template<IView View>
@@ -274,20 +274,19 @@ namespace RexCore::Iter
 		using Iterator = ViewGetIteratorType<View>;
 
 		Skip(U64 toSkip, View view)
-			: m_view(view)
+			: m_view(view), m_begin(view.Begin())
 		{
 			static_assert(IView<Skip<View>>);
 
-			m_begin = m_view.Begin();
 			auto end = m_view.End();
 			for (U64 i = 0; i < toSkip && m_begin != end; i++)
 				++m_begin;
 		}
 
-		[[nodiscard]] Iterator Begin() noexcept {  return m_begin; }
-		[[nodiscard]] Iterator End() noexcept { return m_view.End(); }
-		[[nodiscard]] Iterator begin() noexcept { return m_begin; }
-		[[nodiscard]] Iterator end() noexcept { return End(); }
+		[[nodiscard]] Iterator Begin() const noexcept {  return m_begin; }
+		[[nodiscard]] Iterator End() const noexcept { return m_view.End(); }
+		[[nodiscard]] Iterator begin() const noexcept { return m_begin; }
+		[[nodiscard]] Iterator end() const noexcept { return End(); }
 
 	private:
 		View m_view;
@@ -295,6 +294,6 @@ namespace RexCore::Iter
 	};
 
 	template<typename Container>
-	Skip(U64, Container) -> Skip<std::conditional_t<IView<Container>, Container, ContainerView<ViewGetIteratorType<Container>>>>;
+	Skip(U64, Container) -> Skip<std::conditional_t<IView<Container>, std::remove_reference_t<Container>, ContainerView<ViewGetIteratorType<Container>>>>;
 
 }
